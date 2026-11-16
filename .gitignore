@@ -1,0 +1,38 @@
+# Dependencies and build output
+node_modules/
+dist/
+.wrangler/
+coverage/
+worker/src/ui/generated/
+
+# Local secrets and private deployment config (never commit)
+.dev.vars
+.dev.vars.*
+!.dev.vars.example
+.env
+.env.*
+worker/wrangler.toml
+wrangler.toml
+!wrangler.toml.example
+gate-relay.json
+portal.json
+*.secret
+*.pem
+
+# Real RF captures stay on your device, not in this repo
+*.sub
+
+# Firmware build output
+.pio/
+firmware/build/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+*.swp
+
+# Private strings for scripts/check-private.sh
+.private-terms

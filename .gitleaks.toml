@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Placeholders and public CA certificates"
+paths = [
+  '''firmware/gate_relay/CaRoots\.h''',
+  '''.*\.example(\.json)?$''',
+  '''worker/\.dev\.vars\.example''',
+]
