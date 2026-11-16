@@ -118,7 +118,11 @@ export class CloudflareAccessAuthenticator implements Authenticator {
     return { ok: true, identity: { subject: email, email, provider: this.name } };
   }
 
-  private async verifySignature(kid: string, signature: Uint8Array<ArrayBuffer>, data: Uint8Array<ArrayBuffer>): Promise<boolean> {
+  private async verifySignature(
+    kid: string,
+    signature: Uint8Array<ArrayBuffer>,
+    data: Uint8Array<ArrayBuffer>,
+  ): Promise<boolean> {
     let keys: Jwk[];
     try {
       keys = await this.jwks.getKeys();

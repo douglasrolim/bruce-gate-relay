@@ -147,7 +147,8 @@ const PT: Record<string, string> = {
   Admin: "Administrador",
   Member: "Membro",
   "Add to Home Screen": "Adicionar à tela inicial",
-  "In Safari, tap Share, then “Add to Home Screen”.": "No Safari, toque em Compartilhar e depois em “Adicionar à Tela de Início”.",
+  "In Safari, tap Share, then “Add to Home Screen”.":
+    "No Safari, toque em Compartilhar e depois em “Adicionar à Tela de Início”.",
   "In Chrome, open the ⋮ menu, then “Add to Home screen” or “Install app”.":
     "No Chrome, abra o menu ⋮ e toque em “Adicionar à tela inicial” ou “Instalar app”.",
   "Sign out": "Sair",
@@ -158,7 +159,8 @@ const PT: Record<string, string> = {
   "Edit gate settings": "Editar portão",
   "Share with guests": "Compartilhar com convidados",
   "Getting your location…": "Obtendo sua localização…",
-  "Accuracy is ±{a} m. Open settings to review before saving.": "Precisão de ±{a} m. Revise nas configurações antes de salvar.",
+  "Accuracy is ±{a} m. Open settings to review before saving.":
+    "Precisão de ±{a} m. Revise nas configurações antes de salvar.",
   "Location saved (±{a} m)": "Localização salva (±{a} m)",
   "Couldn't get your location. Try outdoors or allow location.":
     "Não foi possível obter sua localização. Tente ao ar livre ou permita a localização.",
@@ -181,7 +183,8 @@ const PT: Record<string, string> = {
   "Open in Maps": "Abrir no Maps",
   "Nearby radius ": "Raio de proximidade ",
   "Radius in meters": "Raio em metros",
-  "Inside this distance the gate shows up as “Nearby”.": "Dentro dessa distância o portão aparece como “Perto de você”.",
+  "Inside this distance the gate shows up as “Nearby”.":
+    "Dentro dessa distância o portão aparece como “Perto de você”.",
   "Require proximity": "Exigir proximidade",
   "Only open when the phone is within the radius": "Só abre quando o celular estiver dentro do raio",
   Save: "Salvar",
@@ -190,7 +193,8 @@ const PT: Record<string, string> = {
   "Location removed": "Localização removida",
   "Set a location before requiring proximity": "Defina a localização antes de exigir proximidade",
   // Invites
-  "Guests open the gate from a link. No account needed.": "Os convidados abrem o portão por um link. Ninguém precisa de conta.",
+  "Guests open the gate from a link. No account needed.":
+    "Os convidados abrem o portão por um link. Ninguém precisa de conta.",
   Name: "Nome",
   "Birthday party": "Festa de aniversário",
   Starts: "Começa",
@@ -216,7 +220,8 @@ const PT: Record<string, string> = {
   "Link copied": "Link copiado",
   "Couldn't copy. Long-press the link to copy it.": "Não foi possível copiar. Toque e segure no link para copiar.",
   "Share link": "Compartilhar link",
-  "{label}: open the gate from your phone. Valid until {date}.": "{label}: abra o portão pelo celular. Válido até {date}.",
+  "{label}: open the gate from your phone. Valid until {date}.":
+    "{label}: abra o portão pelo celular. Válido até {date}.",
   Status: "Status",
   Opens: "Aberturas",
   "Must be at the gate": "Precisa estar no portão",
@@ -242,9 +247,11 @@ const PT: Record<string, string> = {
   " {n} opens left.": " Restam {n} aberturas.",
   "Your location is only used to check that you're at the gate and is never stored. ":
     "Sua localização só é usada para confirmar que você está no portão e nunca é guardada. ",
-  "Tip: add this page to your Home Screen for quick access.": "Dica: adicione esta página à tela inicial para abrir mais rápido.",
+  "Tip: add this page to your Home Screen for quick access.":
+    "Dica: adicione esta página à tela inicial para abrir mais rápido.",
   // Server validation messages (shown in admin toasts)
-  "Latitude must be -90..90 and longitude -180..180": "A latitude deve ficar entre -90 e 90 e a longitude entre -180 e 180",
+  "Latitude must be -90..90 and longitude -180..180":
+    "A latitude deve ficar entre -90 e 90 e a longitude entre -180 e 180",
   "Radius must be 100..2000 m": "O raio deve ficar entre 100 e 2000 m",
   "Set a location before requiring proximity.": "Defina a localização antes de exigir proximidade.",
   "Label is required (max 60)": "O nome é obrigatório (máx. 60)",

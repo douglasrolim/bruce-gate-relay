@@ -14,13 +14,13 @@
     "deploy": "npm run build:client && wrangler deploy",
     "test": "npm run build:client && vitest run",
     "test:watch": "npm run build:client && vitest",
-    "typecheck": "npm run build:client && tsc --noEmit",
+    "typecheck": "npm run build:client && tsc --noEmit && tsc --noEmit -p client",
     "lint": "eslint . && prettier --check .",
     "format": "prettier --write .",
     "fake-device": "node ../tools/fake-device/fake-device.mjs"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^4.20261101.0",
+    "@cloudflare/workers-types": "^5.20261101.1",
     "@eslint/js": "^9.39.0",
     "@types/node": "^24.0.0",
     "esbuild": "^0.25.0",

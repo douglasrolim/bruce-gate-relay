@@ -20,7 +20,10 @@ describe("static app shell", () => {
   });
 
   it("serves PWA assets", async () => {
-    const manifest = JSON.parse(await get("/manifest.webmanifest")!.text()) as { display: string; icons: { purpose: string }[] };
+    const manifest = JSON.parse(await get("/manifest.webmanifest")!.text()) as {
+      display: string;
+      icons: { purpose: string }[];
+    };
     expect(manifest.display).toBe("standalone");
     expect(manifest.icons.some((i) => i.purpose === "maskable")).toBe(true);
     const sw = await get("/sw.js")!.text();

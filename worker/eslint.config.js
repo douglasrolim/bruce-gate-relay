@@ -13,4 +13,9 @@ export default tseslint.config(
       "no-console": ["warn", { allow: ["warn", "error", "log"] }],
     },
   },
+  {
+    // Build scripts run in Node.js.
+    files: ["scripts/**/*.mjs"],
+    languageOptions: { globals: { console: "readonly", process: "readonly" } },
+  },
 );

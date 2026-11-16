@@ -138,7 +138,9 @@ export function createGateCard(opts: GateControlOptions): HTMLElement {
   const ring = h(
     "span",
     { class: "ring", "aria-hidden": "true" },
-    svg('<svg class="track" viewBox="0 0 44 44"><circle class="bg" cx="22" cy="22" r="18"/><circle class="fg" cx="22" cy="22" r="18"/></svg>'),
+    svg(
+      '<svg class="track" viewBox="0 0 44 44"><circle class="bg" cx="22" cy="22" r="18"/><circle class="fg" cx="22" cy="22" r="18"/></svg>',
+    ),
     ringGlyph,
   );
   const tile = h("span", { class: "tile", "aria-hidden": "true" }, svg(gateIcon(opts.icon, opts.name)));
@@ -159,7 +161,11 @@ export function createGateCard(opts: GateControlOptions): HTMLElement {
   );
 
   if (opts.onMore) {
-    const more = h("button", { class: "more", type: "button", "aria-label": t("Options for {title}", { title }) }, svg(icons.more));
+    const more = h(
+      "button",
+      { class: "more", type: "button", "aria-label": t("Options for {title}", { title }) },
+      svg(icons.more),
+    );
     more.addEventListener("click", (e) => {
       e.stopPropagation();
       opts.onMore!();
@@ -175,10 +181,15 @@ export function createGateCard(opts: GateControlOptions): HTMLElement {
   };
 
   const open = runOpen(card, setState, opts);
-  bindHold(card, () => void open(), (armed) => {
-    card.classList.toggle("is-armed", armed);
-    if (!card.dataset.busy) hint.replaceChildren(...(armed ? [document.createTextNode(t("Press Enter again to open"))] : idleHint(opts)));
-  });
+  bindHold(
+    card,
+    () => void open(),
+    (armed) => {
+      card.classList.toggle("is-armed", armed);
+      if (!card.dataset.busy)
+        hint.replaceChildren(...(armed ? [document.createTextNode(t("Press Enter again to open"))] : idleHint(opts)));
+    },
+  );
   card.addEventListener("hold-hint", () => {
     if (card.dataset.busy || opts.locked) return;
     hint.replaceChildren(document.createTextNode(t("Keep holding to open")));
@@ -206,7 +217,8 @@ export function createHero(opts: GateControlOptions & { eyebrow: string }): HTML
   );
 
   const meta: Node[] = [];
-  if (opts.distanceM !== undefined) meta.push(document.createTextNode(t("{d} away", { d: formatDistance(opts.distanceM) })));
+  if (opts.distanceM !== undefined)
+    meta.push(document.createTextNode(t("{d} away", { d: formatDistance(opts.distanceM) })));
   if (opts.locked) meta.push(document.createTextNode(opts.locked));
 
   const hero = h(
@@ -219,7 +231,11 @@ export function createHero(opts: GateControlOptions & { eyebrow: string }): HTML
     statusLine,
   );
   if (opts.onMore) {
-    const more = h("button", { class: "icon-btn more", type: "button", "aria-label": t("Options for {title}", { title }) }, svg(icons.more));
+    const more = h(
+      "button",
+      { class: "icon-btn more", type: "button", "aria-label": t("Options for {title}", { title }) },
+      svg(icons.more),
+    );
     more.addEventListener("click", () => opts.onMore!());
     hero.appendChild(more);
   }
@@ -229,14 +245,27 @@ export function createHero(opts: GateControlOptions & { eyebrow: string }): HTML
     if (s !== "idle") big.classList.add(`is-${s}`);
     statusLine.className = `status-line${s === "success" ? " ok" : s === "error" ? " err" : ""}`;
     statusLine.textContent = s === "idle" ? "" : (msg ?? "");
-    labelGlyph.replaceChildren(svg(s === "success" ? icons.check : s === "error" ? icons.x : gateIcon(opts.icon, opts.name)));
-    labelText.textContent = s === "sending" ? t("Opening…") : s === "success" ? t("Opened") : s === "error" ? t("Try again") : t("Hold to open");
+    labelGlyph.replaceChildren(
+      svg(s === "success" ? icons.check : s === "error" ? icons.x : gateIcon(opts.icon, opts.name)),
+    );
+    labelText.textContent =
+      s === "sending"
+        ? t("Opening…")
+        : s === "success"
+          ? t("Opened")
+          : s === "error"
+            ? t("Try again")
+            : t("Hold to open");
   };
 
   const open = runOpen(big, setState, opts);
-  bindHold(big, () => void open(), (armed) => {
-    if (!big.dataset.busy) statusLine.textContent = armed ? t("Press Enter again to open") : "";
-  });
+  bindHold(
+    big,
+    () => void open(),
+    (armed) => {
+      if (!big.dataset.busy) statusLine.textContent = armed ? t("Press Enter again to open") : "";
+    },
+  );
   big.addEventListener("hold-hint", () => {
     if (big.dataset.busy) return;
     statusLine.className = "status-line";

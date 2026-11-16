@@ -66,10 +66,15 @@ export class OpenGateService {
       const check = checkProximity({ lat: meta.lat, lng: meta.lng, radiusM: meta.radiusM }, position);
       if (!check.ok) {
         await this.audit(req, gate, false, check.error, check.distanceM);
-        throw new HttpError(403, check.error, check.error === "TOO_FAR" ? "You are too far from this gate" : "Location required", {
-          distanceM: check.distanceM !== undefined ? roundDistance(check.distanceM) : undefined,
-          radiusM: meta.radiusM,
-        });
+        throw new HttpError(
+          403,
+          check.error,
+          check.error === "TOO_FAR" ? "You are too far from this gate" : "Location required",
+          {
+            distanceM: check.distanceM !== undefined ? roundDistance(check.distanceM) : undefined,
+            radiusM: meta.radiusM,
+          },
+        );
       }
       distanceM = check.distanceM;
     }
@@ -97,7 +102,10 @@ export class OpenGateService {
     const { identity } = req;
     return this.deps.audit.append({
       ts: this.deps.now(),
-      who: identity.provider === "invite" ? `Guest: ${identity.label ?? identity.subject}` : (identity.email ?? identity.subject),
+      who:
+        identity.provider === "invite"
+          ? `Guest: ${identity.label ?? identity.subject}`
+          : (identity.email ?? identity.subject),
       provider: identity.provider,
       ip: req.ip,
       gate,

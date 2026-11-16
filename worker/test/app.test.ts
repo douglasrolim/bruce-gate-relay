@@ -54,7 +54,13 @@ describe("user API", () => {
 
     const log = await body(await h.handle(apiRequest("/api/log", { jwt })));
     const entries = log.entries as Record<string, unknown>[];
-    expect(entries[0]).toEqual({ ts: h.clock.t, who: "alice@example.com", provider: "cloudflare-access", gate: "Garage", ok: true });
+    expect(entries[0]).toEqual({
+      ts: h.clock.t,
+      who: "alice@example.com",
+      provider: "cloudflare-access",
+      gate: "Garage",
+      ok: true,
+    });
     // IPs are only shown to admins.
     const adminLog = await body(await h.handle(apiRequest("/api/log", { jwt: await h.token("admin@example.com") })));
     expect((adminLog.entries as Record<string, unknown>[])[0]!.ip).toBe("203.0.113.7");
@@ -100,7 +106,11 @@ describe("user API", () => {
     expect((await h.handle(apiRequest("/api/open", { jwt, body: { gate: "../etc/passwd" } }))).status).toBe(400);
     const raw = new Request("https://gate.example.com/api/open", {
       method: "POST",
-      headers: { "Cf-Access-Jwt-Assertion": jwt, Origin: "https://gate.example.com", "Content-Type": "application/json" },
+      headers: {
+        "Cf-Access-Jwt-Assertion": jwt,
+        Origin: "https://gate.example.com",
+        "Content-Type": "application/json",
+      },
       body: "{not json",
     });
     expect((await h.handle(raw)).status).toBe(400);
@@ -110,7 +120,9 @@ describe("user API", () => {
     const h = await createHarness();
     await online(h);
     const jwt = await h.token("alice@example.com");
-    const evil = await h.handle(apiRequest("/api/open", { jwt, body: { gate: "Garage" }, origin: "https://evil.example" }));
+    const evil = await h.handle(
+      apiRequest("/api/open", { jwt, body: { gate: "Garage" }, origin: "https://evil.example" }),
+    );
     expect(evil.status).toBe(403);
     const noOrigin = await h.handle(apiRequest("/api/open", { jwt, body: { gate: "Garage" }, origin: null }));
     expect(noOrigin.status).toBe(403);
@@ -141,7 +153,11 @@ describe("proximity", () => {
     await online(h);
     const admin = await h.token("admin@example.com");
     const put = await h.handle(
-      apiRequest("/api/admin/gates/Garage", { method: "PUT", jwt: admin, body: { lat: GATE_LAT, lng: GATE_LNG, radiusM: 500, requireProximity: true } }),
+      apiRequest("/api/admin/gates/Garage", {
+        method: "PUT",
+        jwt: admin,
+        body: { lat: GATE_LAT, lng: GATE_LNG, radiusM: 500, requireProximity: true },
+      }),
     );
     expect(put.status).toBe(200);
     return { h, jwt: await h.token("alice@example.com") };
@@ -155,16 +171,31 @@ describe("proximity", () => {
 
   it("rejects far-away opens and accepts nearby ones", async () => {
     const { h, jwt } = await setup();
-    const far = await h.handle(apiRequest("/api/open", { jwt, body: { gate: "Garage", position: { lat: metersNorth(3000), lng: GATE_LNG, accuracy: 20 } } }));
+    const far = await h.handle(
+      apiRequest("/api/open", {
+        jwt,
+        body: { gate: "Garage", position: { lat: metersNorth(3000), lng: GATE_LNG, accuracy: 20 } },
+      }),
+    );
     expect([far.status, (await body(far)).error]).toEqual([403, "TOO_FAR"]);
-    const near = await h.handle(apiRequest("/api/open", { jwt, body: { gate: "Garage", position: { lat: metersNorth(120), lng: GATE_LNG, accuracy: 15 } } }));
+    const near = await h.handle(
+      apiRequest("/api/open", {
+        jwt,
+        body: { gate: "Garage", position: { lat: metersNorth(120), lng: GATE_LNG, accuracy: 15 } },
+      }),
+    );
     expect(near.status).toBe(200);
     expect((await body(near)).distanceM).toBe(100);
   });
 
   it("never stores raw coordinates in the audit log", async () => {
     const { h, jwt } = await setup();
-    await h.handle(apiRequest("/api/open", { jwt, body: { gate: "Garage", position: { lat: metersNorth(143), lng: GATE_LNG, accuracy: 15 } } }));
+    await h.handle(
+      apiRequest("/api/open", {
+        jwt,
+        body: { gate: "Garage", position: { lat: metersNorth(143), lng: GATE_LNG, accuracy: 15 } },
+      }),
+    );
     const stored = JSON.stringify([...h.store.data.entries()]);
     expect(stored.includes(String(metersNorth(143)))).toBe(false);
     const log = await body(await h.handle(apiRequest("/api/log", { jwt })));
@@ -174,7 +205,13 @@ describe("proximity", () => {
   it("exposes gate locations in /api/gates", async () => {
     const { h, jwt } = await setup();
     const res = await body(await h.handle(apiRequest("/api/gates", { jwt })));
-    expect((res.gates as Record<string, unknown>[])[0]).toEqual({ name: "Garage", lat: GATE_LAT, lng: GATE_LNG, radiusM: 500, requireProximity: true });
+    expect((res.gates as Record<string, unknown>[])[0]).toEqual({
+      name: "Garage",
+      lat: GATE_LAT,
+      lng: GATE_LNG,
+      radiusM: 500,
+      requireProximity: true,
+    });
   });
 });
 
@@ -183,8 +220,12 @@ describe("admin API", () => {
     const h = await createHarness();
     const jwt = await h.token("alice@example.com");
     expect((await h.handle(apiRequest("/api/admin/gates", { jwt }))).status).toBe(403);
-    expect((await h.handle(apiRequest("/api/admin/invites", { jwt, body: { label: "x", gates: ["Garage"] } }))).status).toBe(403);
-    expect((await h.handle(apiRequest("/api/admin/gates/Garage", { method: "PUT", jwt, body: { radiusM: 500 } }))).status).toBe(403);
+    expect(
+      (await h.handle(apiRequest("/api/admin/invites", { jwt, body: { label: "x", gates: ["Garage"] } }))).status,
+    ).toBe(403);
+    expect(
+      (await h.handle(apiRequest("/api/admin/gates/Garage", { method: "PUT", jwt, body: { radiusM: 500 } }))).status,
+    ).toBe(403);
   });
 
   it("validates gate metadata", async () => {
@@ -208,14 +249,18 @@ describe("admin API", () => {
     await h.handle(apiRequest("/api/admin/gates/Old%20Gate", { method: "PUT", jwt, body: { lat: 1, lng: 1 } }));
     const res = await body(await h.handle(apiRequest("/api/admin/gates", { jwt })));
     expect((res.orphans as { gate: string }[]).map((o) => o.gate)).toEqual(["Old Gate"]);
-    const del = await h.handle(apiRequest("/api/admin/gates/Old%20Gate", { method: "DELETE", jwt, origin: "https://gate.example.com" }));
+    const del = await h.handle(
+      apiRequest("/api/admin/gates/Old%20Gate", { method: "DELETE", jwt, origin: "https://gate.example.com" }),
+    );
     expect(del.status).toBe(200);
   });
 
   it("exports and imports gate settings", async () => {
     const h = await createHarness();
     const jwt = await h.token("admin@example.com");
-    await h.handle(apiRequest("/api/admin/gates/Garage", { method: "PUT", jwt, body: { lat: 1, lng: 2, radiusM: 300 } }));
+    await h.handle(
+      apiRequest("/api/admin/gates/Garage", { method: "PUT", jwt, body: { lat: 1, lng: 2, radiusM: 300 } }),
+    );
     const exported = await body(await h.handle(apiRequest("/api/admin/export", { jwt })));
     const h2 = await createHarness();
     const jwt2 = await h2.token("admin@example.com");
@@ -227,7 +272,12 @@ describe("admin API", () => {
 describe("guest invites", () => {
   async function createInvite(h: Harness, extra: Record<string, unknown> = {}) {
     const jwt = await h.token("admin@example.com");
-    const res = await h.handle(apiRequest("/api/admin/invites", { jwt, body: { label: "Birthday party", gates: ["Garage"], requireProximity: false, ...extra } }));
+    const res = await h.handle(
+      apiRequest("/api/admin/invites", {
+        jwt,
+        body: { label: "Birthday party", gates: ["Garage"], requireProximity: false, ...extra },
+      }),
+    );
     expect(res.status).toBe(201);
     const data = await body(res);
     const token = String(data.url).split("/i/")[1]!;
@@ -244,7 +294,9 @@ describe("guest invites", () => {
 
     const res = await h.handle(apiRequest("/api/guest/open", { bearer: token, body: { gate: "Garage" } }));
     expect(res.status).toBe(200);
-    const notInvited = await h.handle(apiRequest("/api/guest/open", { bearer: token, body: { gate: "Main Entrance" } }));
+    const notInvited = await h.handle(
+      apiRequest("/api/guest/open", { bearer: token, body: { gate: "Main Entrance" } }),
+    );
     expect(notInvited.status).toBe(403);
 
     const log = await body(await h.handle(apiRequest("/api/log", { jwt: await h.token("alice@example.com") })));
@@ -265,12 +317,16 @@ describe("guest invites", () => {
     expect([expired.status, (await body(expired)).error]).toEqual([401, "INVITE_EXPIRED"]);
 
     const revokable = await createInvite(h);
-    const rv = await h.handle(apiRequest(`/api/admin/invites/${revokable.id}/revoke`, { jwt: revokable.jwt, body: {} }));
+    const rv = await h.handle(
+      apiRequest(`/api/admin/invites/${revokable.id}/revoke`, { jwt: revokable.jwt, body: {} }),
+    );
     expect(rv.status).toBe(200);
     expect((await gates(revokable.token)).status).toBe(401);
 
     const once = await createInvite(h, { maxOpens: 1 });
-    expect((await h.handle(apiRequest("/api/guest/open", { bearer: once.token, body: { gate: "Garage" } }))).status).toBe(200);
+    expect(
+      (await h.handle(apiRequest("/api/guest/open", { bearer: once.token, body: { gate: "Garage" } }))).status,
+    ).toBe(200);
     const exhausted = await gates(once.token);
     expect([exhausted.status, (await body(exhausted)).error]).toEqual([401, "INVITE_EXPIRED"]);
   });
@@ -287,13 +343,29 @@ describe("guest invites", () => {
     const h = await createHarness();
     await online(h);
     const admin = await h.token("admin@example.com");
-    await h.handle(apiRequest("/api/admin/gates/Garage", { method: "PUT", jwt: admin, body: { lat: GATE_LAT, lng: GATE_LNG, radiusM: 300 } }));
+    await h.handle(
+      apiRequest("/api/admin/gates/Garage", {
+        method: "PUT",
+        jwt: admin,
+        body: { lat: GATE_LAT, lng: GATE_LNG, radiusM: 300 },
+      }),
+    );
     const { token } = await createInvite(h, { requireProximity: true });
     const view = await body(await h.handle(apiRequest("/api/guest/gates", { bearer: token })));
     expect((view.gates as { requireProximity: boolean }[])[0]!.requireProximity).toBe(true);
-    const far = await h.handle(apiRequest("/api/guest/open", { bearer: token, body: { gate: "Garage", position: { lat: metersNorth(5000), lng: GATE_LNG, accuracy: 10 } } }));
+    const far = await h.handle(
+      apiRequest("/api/guest/open", {
+        bearer: token,
+        body: { gate: "Garage", position: { lat: metersNorth(5000), lng: GATE_LNG, accuracy: 10 } },
+      }),
+    );
     expect((await body(far)).error).toBe("TOO_FAR");
-    const near = await h.handle(apiRequest("/api/guest/open", { bearer: token, body: { gate: "Garage", position: { lat: metersNorth(50), lng: GATE_LNG, accuracy: 10 } } }));
+    const near = await h.handle(
+      apiRequest("/api/guest/open", {
+        bearer: token,
+        body: { gate: "Garage", position: { lat: metersNorth(50), lng: GATE_LNG, accuracy: 10 } },
+      }),
+    );
     expect(near.status).toBe(200);
   });
 

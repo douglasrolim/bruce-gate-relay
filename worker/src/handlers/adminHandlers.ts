@@ -153,18 +153,31 @@ export function validateInvite(body: Record<string, unknown>, deviceGates: reado
 
   const validFrom = body.validFrom === undefined ? now : body.validFrom;
   const validUntil = body.validUntil === undefined ? now + 24 * 60 * 60 * 1000 : body.validUntil;
-  if (typeof validFrom !== "number" || typeof validUntil !== "number" || !Number.isFinite(validFrom) || !Number.isFinite(validUntil)) {
+  if (
+    typeof validFrom !== "number" ||
+    typeof validUntil !== "number" ||
+    !Number.isFinite(validFrom) ||
+    !Number.isFinite(validUntil)
+  ) {
     throw new HttpError(400, "BAD_REQUEST", "Invalid dates");
   }
-  if (validUntil <= validFrom || validUntil <= now) throw new HttpError(400, "BAD_REQUEST", "The end must be in the future and after the start");
-  if (validUntil - validFrom > MAX_INVITE_DURATION_MS) throw new HttpError(400, "BAD_REQUEST", "Invites can last 30 days at most");
+  if (validUntil <= validFrom || validUntil <= now)
+    throw new HttpError(400, "BAD_REQUEST", "The end must be in the future and after the start");
+  if (validUntil - validFrom > MAX_INVITE_DURATION_MS)
+    throw new HttpError(400, "BAD_REQUEST", "Invites can last 30 days at most");
 
   const requireProximity = body.requireProximity === undefined ? true : body.requireProximity;
-  if (typeof requireProximity !== "boolean") throw new HttpError(400, "BAD_REQUEST", "requireProximity must be a boolean");
+  if (typeof requireProximity !== "boolean")
+    throw new HttpError(400, "BAD_REQUEST", "requireProximity must be a boolean");
 
   let maxOpens: number | undefined;
   if (body.maxOpens !== undefined && body.maxOpens !== null) {
-    if (typeof body.maxOpens !== "number" || !Number.isInteger(body.maxOpens) || body.maxOpens < 1 || body.maxOpens > 1000) {
+    if (
+      typeof body.maxOpens !== "number" ||
+      !Number.isInteger(body.maxOpens) ||
+      body.maxOpens < 1 ||
+      body.maxOpens > 1000
+    ) {
       throw new HttpError(400, "BAD_REQUEST", "maxOpens must be 1..1000");
     }
     maxOpens = body.maxOpens;

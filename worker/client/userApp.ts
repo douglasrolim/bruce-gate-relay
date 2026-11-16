@@ -67,10 +67,28 @@ export class UserApp {
         "div",
         { class: "empty", style: "padding-top:20vh" },
         svg(forbidden ? icons.shield : icons.wifiOff),
-        h("b", {}, forbidden ? t("This account can't open gates") : expired ? t("Please sign in again") : t("Can't reach the server")),
-        forbidden ? t("Ask the owner to add your email.") : expired ? t("Your session expired.") : t("Check your connection and try again."),
-        h("div", { style: "margin-top:16px;display:flex;gap:8px;justify-content:center" },
-          h("button", { class: "btn primary", type: "button", onclick: () => location.reload() }, expired ? t("Sign in") : t("Try again")),
+        h(
+          "b",
+          {},
+          forbidden
+            ? t("This account can't open gates")
+            : expired
+              ? t("Please sign in again")
+              : t("Can't reach the server"),
+        ),
+        forbidden
+          ? t("Ask the owner to add your email.")
+          : expired
+            ? t("Your session expired.")
+            : t("Check your connection and try again."),
+        h(
+          "div",
+          { style: "margin-top:16px;display:flex;gap:8px;justify-content:center" },
+          h(
+            "button",
+            { class: "btn primary", type: "button", onclick: () => location.reload() },
+            expired ? t("Sign in") : t("Try again"),
+          ),
           forbidden ? h("a", { class: "btn", href: "/cdn-cgi/access/logout" }, t("Use another account")) : null,
         ),
       ),
@@ -183,11 +201,14 @@ export class UserApp {
         const needsPos = gate.requireProximity;
         await this.api.open(gate.name, needsPos && this.loc.position ? this.loc.position : undefined);
       },
-      more: this.me.isAdmin ? (gate) => openGateMenu(this.api, this.loc, gate, this.gates, () => void this.refresh()) : undefined,
+      more: this.me.isAdmin
+        ? (gate) => openGateMenu(this.api, this.loc, gate, this.gates, () => void this.refresh())
+        : undefined,
       describeError: errorText,
     });
 
-    fill(this.main,
+    fill(
+      this.main,
       !this.online ? offlineBanner(this.lastSeen) : null,
       this.gates.some((g) => g.lat !== undefined) ? locationBanner(this.loc.state, this.loc) : null,
       list,
@@ -202,17 +223,28 @@ export class UserApp {
     try {
       entries = (await this.api.log()).entries;
     } catch (err) {
-      this.main.replaceChildren(h("div", { class: "empty" }, svg(icons.alert), h("b", {}, t("Couldn't load activity")), errorText(err)));
+      this.main.replaceChildren(
+        h("div", { class: "empty" }, svg(icons.alert), h("b", {}, t("Couldn't load activity")), errorText(err)),
+      );
       return;
     }
     if (this.tab !== "activity") return;
     if (entries.length === 0) {
-      this.main.replaceChildren(h("div", { class: "empty" }, svg(icons.clock), h("b", {}, t("No activity yet")), t("Every open shows up here: who, which gate and when.")));
+      this.main.replaceChildren(
+        h(
+          "div",
+          { class: "empty" },
+          svg(icons.clock),
+          h("b", {}, t("No activity yet")),
+          t("Every open shows up here: who, which gate and when."),
+        ),
+      );
       return;
     }
     const refresh = h("button", { type: "button" }, t("Refresh"));
     refresh.addEventListener("click", () => void this.renderActivity());
-    fill(this.main,
+    fill(
+      this.main,
       h("div", { class: "section-title" }, t("Last {n}", { n: entries.length }), refresh),
       h(
         "div",
@@ -223,7 +255,11 @@ export class UserApp {
           return h(
             "div",
             { class: "feed-item" },
-            h("span", { class: `ava${guest ? " guest" : ""}`, "aria-hidden": "true" }, guest ? svg(icons.ticket) : name.charAt(0).toUpperCase()),
+            h(
+              "span",
+              { class: `ava${guest ? " guest" : ""}`, "aria-hidden": "true" },
+              guest ? svg(icons.ticket) : name.charAt(0).toUpperCase(),
+            ),
             h(
               "div",
               { class: "what" },
@@ -240,7 +276,11 @@ export class UserApp {
                 e.ip && e.ip !== "unknown" ? ` · ${e.ip}` : "",
               ),
             ),
-            h("span", { class: `res ${e.ok ? "ok" : "err"}`, "aria-label": e.ok ? t("Success") : t("Failed") }, svg(e.ok ? icons.check : icons.x)),
+            h(
+              "span",
+              { class: `res ${e.ok ? "ok" : "err"}`, "aria-label": e.ok ? t("Success") : t("Failed") },
+              svg(e.ok ? icons.check : icons.x),
+            ),
           );
         }),
       ),
@@ -256,7 +296,9 @@ export class UserApp {
     try {
       [data, { invites }] = await Promise.all([this.api.adminGates(), this.api.invites()]);
     } catch (err) {
-      this.main.replaceChildren(h("div", { class: "empty" }, svg(icons.alert), h("b", {}, t("Couldn't load")), errorText(err)));
+      this.main.replaceChildren(
+        h("div", { class: "empty" }, svg(icons.alert), h("b", {}, t("Couldn't load")), errorText(err)),
+      );
       return;
     }
     if (this.tab !== "manage") return;
@@ -264,16 +306,36 @@ export class UserApp {
 
     const newInvite = h("button", { type: "button" }, svg(icons.plus), t("New"));
     newInvite.addEventListener("click", () => openInviteCreate(this.api, data.gates, [], reload));
-    const visibleInvites = invites.filter((i) => i.status === "active" || i.status === "scheduled" || Date.now() - i.validUntil < 7 * 86400_000);
+    const visibleInvites = invites.filter(
+      (i) => i.status === "active" || i.status === "scheduled" || Date.now() - i.validUntil < 7 * 86400_000,
+    );
 
-    const exportBtn = h("button", { class: "group-row", type: "button" }, h("span", { class: "tile" }, svg(icons.download)), h("span", { class: "txt" }, h("b", {}, t("Export gate settings")), h("small", {}, t("Download a JSON backup"))), svg(icons.chevron));
+    const exportBtn = h(
+      "button",
+      { class: "group-row", type: "button" },
+      h("span", { class: "tile" }, svg(icons.download)),
+      h("span", { class: "txt" }, h("b", {}, t("Export gate settings")), h("small", {}, t("Download a JSON backup"))),
+      svg(icons.chevron),
+    );
     exportBtn.addEventListener("click", () => void this.exportSettings());
     const importInput = h("input", { type: "file", accept: "application/json,.json", hidden: true });
-    const importBtn = h("button", { class: "group-row", type: "button" }, h("span", { class: "tile" }, svg(icons.upload)), h("span", { class: "txt" }, h("b", {}, t("Import gate settings")), h("small", {}, t("Restore from a JSON backup"))), svg(icons.chevron));
+    const importBtn = h(
+      "button",
+      { class: "group-row", type: "button" },
+      h("span", { class: "tile" }, svg(icons.upload)),
+      h(
+        "span",
+        { class: "txt" },
+        h("b", {}, t("Import gate settings")),
+        h("small", {}, t("Restore from a JSON backup")),
+      ),
+      svg(icons.chevron),
+    );
     importBtn.addEventListener("click", () => importInput.click());
     importInput.addEventListener("change", () => void this.importSettings(importInput, reload));
 
-    fill(this.main,
+    fill(
+      this.main,
       h("div", { class: "section-title" }, t("Guest invites"), newInvite),
       visibleInvites.length
         ? h(
@@ -284,7 +346,20 @@ export class UserApp {
                 "button",
                 { class: "group-row", type: "button" },
                 h("span", { class: "tile" }, svg(icons.ticket)),
-                h("span", { class: "txt" }, h("b", {}, inv.label), h("small", {}, t("{gates} · until {date} · {n} opens", { gates: inv.gates.join(", "), date: formatDateTime(inv.validUntil), n: inv.opens }))),
+                h(
+                  "span",
+                  { class: "txt" },
+                  h("b", {}, inv.label),
+                  h(
+                    "small",
+                    {},
+                    t("{gates} · until {date} · {n} opens", {
+                      gates: inv.gates.join(", "),
+                      date: formatDateTime(inv.validUntil),
+                      n: inv.opens,
+                    }),
+                  ),
+                ),
                 statusTag(inv),
               );
               row.addEventListener("click", () => openInviteDetail(this.api, inv, reload));
@@ -295,7 +370,14 @@ export class UserApp {
             "div",
             { class: "banner info" },
             svg(icons.ticket),
-            h("div", {}, h("strong", {}, t("Having guests over?")), t("Create a link that opens the gate for a few hours. No accounts needed, and you can revoke it anytime.")),
+            h(
+              "div",
+              {},
+              h("strong", {}, t("Having guests over?")),
+              t(
+                "Create a link that opens the gate for a few hours. No accounts needed, and you can revoke it anytime.",
+              ),
+            ),
           ),
       h("div", { class: "section-title" }, t("Gates")),
       data.gates.length
@@ -311,24 +393,67 @@ export class UserApp {
                   "span",
                   { class: "txt" },
                   h("b", {}, g.label || g.name),
-                  h("small", {}, g.lat !== undefined ? t("Location set · {r} m", { r: g.radiusM ?? 500 }) + (g.requireProximity ? t(" · proximity required") : "") : t("No location")),
+                  h(
+                    "small",
+                    {},
+                    g.lat !== undefined
+                      ? t("Location set · {r} m", { r: g.radiusM ?? 500 }) +
+                          (g.requireProximity ? t(" · proximity required") : "")
+                      : t("No location"),
+                  ),
                 ),
                 svg(icons.chevron),
               );
-              row.addEventListener("click", () => openGateSettings(this.api, this.loc, g, () => { reload(); void this.refresh(); }));
+              row.addEventListener("click", () =>
+                openGateSettings(this.api, this.loc, g, () => {
+                  reload();
+                  void this.refresh();
+                }),
+              );
               return row;
             }),
           )
-        : h("div", { class: "banner" }, svg(icons.wifiOff), h("div", {}, h("strong", {}, t("No gates from the device")), t("Gate settings appear once the device is online."))),
+        : h(
+            "div",
+            { class: "banner" },
+            svg(icons.wifiOff),
+            h(
+              "div",
+              {},
+              h("strong", {}, t("No gates from the device")),
+              t("Gate settings appear once the device is online."),
+            ),
+          ),
       data.orphans.length
         ? [
             h("div", { class: "section-title" }, t("Orphaned settings")),
-            h("div", { class: "banner warn" }, svg(icons.alert), h("div", {}, h("strong", {}, t("These gates are gone from the device")), t("Probably a renamed .sub file. Move the settings to the new name or delete them."))),
+            h(
+              "div",
+              { class: "banner warn" },
+              svg(icons.alert),
+              h(
+                "div",
+                {},
+                h("strong", {}, t("These gates are gone from the device")),
+                t("Probably a renamed .sub file. Move the settings to the new name or delete them."),
+              ),
+            ),
             h(
               "div",
               { class: "group" },
               data.orphans.map((o) => {
-                const row = h("button", { class: "group-row", type: "button" }, h("span", { class: "tile" }, svg(icons.alert)), h("span", { class: "txt" }, h("b", {}, o.gate), h("small", {}, o.lat !== undefined ? t("Has a location") : t("No location"))), svg(icons.chevron));
+                const row = h(
+                  "button",
+                  { class: "group-row", type: "button" },
+                  h("span", { class: "tile" }, svg(icons.alert)),
+                  h(
+                    "span",
+                    { class: "txt" },
+                    h("b", {}, o.gate),
+                    h("small", {}, o.lat !== undefined ? t("Has a location") : t("No location")),
+                  ),
+                  svg(icons.chevron),
+                );
                 row.addEventListener("click", () => this.openOrphan(o.gate, data.gates, reload));
                 return row;
               }),
@@ -362,16 +487,21 @@ export class UserApp {
             }
           }),
         ),
-        menuButton(icons.trash, t("Delete settings"), async () => {
-          try {
-            await this.api.deleteGate(name);
-            toast(t("Deleted"));
-            sheet.close();
-            reload();
-          } catch (e) {
-            toast(errorText(e), 4000);
-          }
-        }, true),
+        menuButton(
+          icons.trash,
+          t("Delete settings"),
+          async () => {
+            try {
+              await this.api.deleteGate(name);
+              toast(t("Deleted"));
+              sheet.close();
+              reload();
+            } catch (e) {
+              toast(errorText(e), 4000);
+            }
+          },
+          true,
+        ),
       ),
     );
   }
@@ -380,7 +510,10 @@ export class UserApp {
     try {
       const data = await this.api.exportGates();
       const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
-      const a = h("a", { href: URL.createObjectURL(blob), download: `gate-settings-${new Date().toISOString().slice(0, 10)}.json` });
+      const a = h("a", {
+        href: URL.createObjectURL(blob),
+        download: `gate-settings-${new Date().toISOString().slice(0, 10)}.json`,
+      });
       document.body.append(a);
       a.click();
       a.remove();
@@ -427,7 +560,14 @@ export class UserApp {
             "div",
             { class: "banner info" },
             svg(icons.phone),
-            h("div", {}, h("strong", {}, t("Add to Home Screen")), ios ? t("In Safari, tap Share, then “Add to Home Screen”.") : t("In Chrome, open the ⋮ menu, then “Add to Home screen” or “Install app”.")),
+            h(
+              "div",
+              {},
+              h("strong", {}, t("Add to Home Screen")),
+              ios
+                ? t("In Safari, tap Share, then “Add to Home Screen”.")
+                : t("In Chrome, open the ⋮ menu, then “Add to Home screen” or “Install app”."),
+            ),
           ),
       h("a", { class: "btn danger block", href: "/cdn-cgi/access/logout" }, svg(icons.logout), t("Sign out")),
     );

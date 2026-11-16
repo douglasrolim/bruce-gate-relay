@@ -10,7 +10,11 @@ export type Child = Node | string | number | false | null | undefined | Child[];
  * Tiny element factory. Text is always inserted as text nodes (never as HTML),
  * so server data cannot inject markup. Only trusted constant SVG goes through `svg()`.
  */
-export function h<K extends keyof HTMLElementTagNameMap>(tag: K, attrs: Attrs = {}, ...children: Child[]): HTMLElementTagNameMap[K] {
+export function h<K extends keyof HTMLElementTagNameMap>(
+  tag: K,
+  attrs: Attrs = {},
+  ...children: Child[]
+): HTMLElementTagNameMap[K] {
   const el = document.createElement(tag);
   for (const [key, value] of Object.entries(attrs)) {
     if (value === undefined || value === null || value === false) continue;
@@ -78,7 +82,10 @@ export function formatDistance(m: number): string {
   return `${(m / 1000).toFixed(m < 10_000 ? 1 : 0)} km`;
 }
 
-const rtf = typeof Intl !== "undefined" && "RelativeTimeFormat" in Intl ? new Intl.RelativeTimeFormat(locale, { numeric: "auto" }) : null;
+const rtf =
+  typeof Intl !== "undefined" && "RelativeTimeFormat" in Intl
+    ? new Intl.RelativeTimeFormat(locale, { numeric: "auto" })
+    : null;
 export function timeAgo(ts: number, now = Date.now()): string {
   const s = Math.round((ts - now) / 1000);
   const abs = Math.abs(s);
@@ -90,7 +97,13 @@ export function timeAgo(ts: number, now = Date.now()): string {
 }
 
 export function formatDateTime(ts: number): string {
-  return new Date(ts).toLocaleString(locale, { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+  return new Date(ts).toLocaleString(locale, {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }
 
 /** Value for <input type="datetime-local"> in local time. */

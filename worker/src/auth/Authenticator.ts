@@ -12,15 +12,9 @@ export interface Identity {
   label?: string;
 }
 
-export type AuthFailureReason =
-  | "MISSING_CREDENTIALS"
-  | "INVALID_CREDENTIALS"
-  | "EXPIRED"
-  | "MISCONFIGURED";
+export type AuthFailureReason = "MISSING_CREDENTIALS" | "INVALID_CREDENTIALS" | "EXPIRED" | "MISCONFIGURED";
 
-export type AuthResult =
-  | { ok: true; identity: Identity }
-  | { ok: false; reason: AuthFailureReason };
+export type AuthResult = { ok: true; identity: Identity } | { ok: false; reason: AuthFailureReason };
 
 /**
  * Strategy interface for authentication. Contract shared by every implementation:

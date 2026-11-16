@@ -34,7 +34,11 @@ export async function createSigner(kid = "key-1"): Promise<TestSigner> {
     async sign(payload, signKid = kid) {
       const head = enc({ alg: "RS256", kid: signKid, typ: "JWT" });
       const body = enc(payload);
-      const sig = await crypto.subtle.sign("RSASSA-PKCS1-v1_5", pair.privateKey, new TextEncoder().encode(`${head}.${body}`));
+      const sig = await crypto.subtle.sign(
+        "RSASSA-PKCS1-v1_5",
+        pair.privateKey,
+        new TextEncoder().encode(`${head}.${body}`),
+      );
       return `${head}.${body}.${base64UrlEncode(new Uint8Array(sig))}`;
     },
   };
@@ -61,7 +65,9 @@ export class FakeSocket implements DeviceSocket {
     if (msg.type === "open" && this.autoReply) {
       const reply = this.autoReply(String(msg.gate));
       if (reply) {
-        queueMicrotask(() => this.session.handleMessage(this, JSON.stringify({ v: 1, type: "result", id: msg.id, ...reply })));
+        queueMicrotask(() =>
+          this.session.handleMessage(this, JSON.stringify({ v: 1, type: "result", id: msg.id, ...reply })),
+        );
       }
     }
   }
@@ -84,7 +90,11 @@ export class Clock {
   }
 }
 
-export function connectDevice(session: DeviceSession, sockets: FakeSocket[], gates = ["Garage", "Main Entrance"]): FakeSocket {
+export function connectDevice(
+  session: DeviceSession,
+  sockets: FakeSocket[],
+  gates = ["Garage", "Main Entrance"],
+): FakeSocket {
   const socket = new FakeSocket();
   socket.session = session;
   sockets.push(socket);
@@ -105,7 +115,10 @@ export interface Harness {
   token(email: string, extra?: Record<string, unknown>): Promise<string>;
 }
 
-export async function createHarness(envOverrides: Partial<Env> = {}, opts: { timeoutMs?: number; userAuth?: Authenticator } = {}): Promise<Harness> {
+export async function createHarness(
+  envOverrides: Partial<Env> = {},
+  opts: { timeoutMs?: number; userAuth?: Authenticator } = {},
+): Promise<Harness> {
   const clock = new Clock();
   const store = new MemoryStore();
   const sockets: FakeSocket[] = [];
@@ -136,7 +149,14 @@ export async function createHarness(envOverrides: Partial<Env> = {}, opts: { tim
 
 export function apiRequest(
   path: string,
-  init: { method?: string; jwt?: string; body?: unknown; origin?: string | null; contentType?: string; bearer?: string } = {},
+  init: {
+    method?: string;
+    jwt?: string;
+    body?: unknown;
+    origin?: string | null;
+    contentType?: string;
+    bearer?: string;
+  } = {},
 ): Request {
   const headers = new Headers();
   if (init.jwt) headers.set("Cf-Access-Jwt-Assertion", init.jwt);

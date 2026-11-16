@@ -11,7 +11,20 @@ describe("isValidGateName", () => {
     for (const n of ["Garage", "Main Entrance", "Portão 2", "gate_1-a"]) expect(isValidGateName(n)).toBe(true);
   });
   it("rejects paths, traversal and junk", () => {
-    for (const n of ["", "../etc", "a/b", "a\\b", "..", ".hidden", " padded", "x".repeat(49), "nul\u0000", "c:", 42, null]) {
+    for (const n of [
+      "",
+      "../etc",
+      "a/b",
+      "a\\b",
+      "..",
+      ".hidden",
+      " padded",
+      "x".repeat(49),
+      "nul\u0000",
+      "c:",
+      42,
+      null,
+    ]) {
       expect(isValidGateName(n)).toBe(false);
     }
   });

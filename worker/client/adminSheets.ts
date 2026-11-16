@@ -18,9 +18,18 @@ const errText = (e: unknown) =>
     : t("Something went wrong");
 
 /** The "⋯" menu on a gate card (admins only). */
-export function openGateMenu(api: Api, loc: LocationService, gate: GateView, allGates: GateView[], onChange: () => void): void {
+export function openGateMenu(
+  api: Api,
+  loc: LocationService,
+  gate: GateView,
+  allGates: GateView[],
+  onChange: () => void,
+): void {
   const title = gate.label || gate.name;
-  const sheet = openSheet(title, gate.lat !== undefined ? t("Location set · {r} m radius", { r: gate.radiusM ?? 500 }) : t("No location yet"));
+  const sheet = openSheet(
+    title,
+    gate.lat !== undefined ? t("Location set · {r} m radius", { r: gate.radiusM ?? 500 }) : t("No location yet"),
+  );
   sheet.setContent(
     h(
       "div",
@@ -66,12 +75,25 @@ async function setLocationHere(api: Api, loc: LocationService, gate: GateView, o
 }
 
 /** Per-gate settings: name, icon, location, radius and the proximity requirement. */
-export function openGateSettings(api: Api, loc: LocationService, gate: GateView, onChange: () => void, accuracy?: number): void {
+export function openGateSettings(
+  api: Api,
+  loc: LocationService,
+  gate: GateView,
+  onChange: () => void,
+  accuracy?: number,
+): void {
   let lat = gate.lat;
   let lng = gate.lng;
   let icon = gate.icon;
 
-  const label = h("input", { class: "input", type: "text", maxlength: "40", value: gate.label ?? "", placeholder: gate.name, autocomplete: "off" });
+  const label = h("input", {
+    class: "input",
+    type: "text",
+    maxlength: "40",
+    value: gate.label ?? "",
+    placeholder: gate.name,
+    autocomplete: "off",
+  });
   const coords = h("input", {
     class: "input",
     type: "text",
@@ -81,10 +103,27 @@ export function openGateSettings(api: Api, loc: LocationService, gate: GateView,
     "aria-describedby": "coords-help",
   });
   const accuracyBox = h("div", { class: "accuracy", hidden: true, role: "status" });
-  const mapsLink = h("a", { class: "btn sm ghost", target: "_blank", rel: "noopener noreferrer" }, svg(icons.map), t("Open in Maps"));
-  const radius = h("input", { type: "range", min: "100", max: "2000", step: "50", value: String(gate.radiusM ?? 500), "aria-label": t("Radius in meters") });
+  const mapsLink = h(
+    "a",
+    { class: "btn sm ghost", target: "_blank", rel: "noopener noreferrer" },
+    svg(icons.map),
+    t("Open in Maps"),
+  );
+  const radius = h("input", {
+    type: "range",
+    min: "100",
+    max: "2000",
+    step: "50",
+    value: String(gate.radiusM ?? 500),
+    "aria-label": t("Radius in meters"),
+  });
   const radiusValue = h("b", {}, `${gate.radiusM ?? 500} m`);
-  const proximity = h("input", { type: "checkbox", role: "switch", checked: gate.requireProximity, "aria-label": t("Require proximity") });
+  const proximity = h("input", {
+    type: "checkbox",
+    role: "switch",
+    checked: gate.requireProximity,
+    "aria-label": t("Require proximity"),
+  });
 
   const showAccuracy = (acc: number) => {
     accuracyBox.hidden = false;
@@ -113,7 +152,12 @@ export function openGateSettings(api: Api, loc: LocationService, gate: GateView,
   });
   radius.addEventListener("input", () => (radiusValue.textContent = `${radius.value} m`));
 
-  const useHere = h("button", { class: "btn primary block", type: "button" }, svg(icons.locate), t("Use my current location"));
+  const useHere = h(
+    "button",
+    { class: "btn primary block", type: "button" },
+    svg(icons.locate),
+    t("Use my current location"),
+  );
   useHere.addEventListener("click", async () => {
     useHere.setAttribute("disabled", "");
     useHere.lastChild!.textContent = t("Locating…");
@@ -137,10 +181,16 @@ export function openGateSettings(api: Api, loc: LocationService, gate: GateView,
     "div",
     { class: "chips", role: "group", "aria-label": t("Icon") },
     GATE_ICON_NAMES.map((name) => {
-      const chip = h("button", { class: "chip", type: "button", "aria-pressed": String((icon ?? "") === name), "aria-label": name }, svg(icons[name]));
+      const chip = h(
+        "button",
+        { class: "chip", type: "button", "aria-pressed": String((icon ?? "") === name), "aria-label": name },
+        svg(icons[name]),
+      );
       chip.addEventListener("click", () => {
         icon = icon === name ? undefined : name;
-        iconChips.querySelectorAll(".chip").forEach((c) => c.setAttribute("aria-pressed", String(c === chip && icon === name)));
+        iconChips
+          .querySelectorAll(".chip")
+          .forEach((c) => c.setAttribute("aria-pressed", String(c === chip && icon === name)));
       });
       return chip;
     }),
@@ -150,30 +200,65 @@ export function openGateSettings(api: Api, loc: LocationService, gate: GateView,
   const form = h(
     "form",
     {},
-    h("label", { class: "field" }, h("span", {}, t("Display name")), label, h("small", {}, t("Device file: {file}", { file: `${gate.name}.sub` }))),
+    h(
+      "label",
+      { class: "field" },
+      h("span", {}, t("Display name")),
+      label,
+      h("small", {}, t("Device file: {file}", { file: `${gate.name}.sub` })),
+    ),
     h("div", { class: "field" }, h("span", {}, t("Icon")), iconChips),
     h("div", { class: "section-title" }, t("Location")),
     useHere,
     h("div", { style: "height:10px" }),
     accuracyBox,
-    h("label", { class: "field" }, h("span", {}, t("Or paste coordinates")), coords, h("small", { id: "coords-help" }, t("Copy them from Google Maps: long-press the gate → tap the coordinates."))),
+    h(
+      "label",
+      { class: "field" },
+      h("span", {}, t("Or paste coordinates")),
+      coords,
+      h("small", { id: "coords-help" }, t("Copy them from Google Maps: long-press the gate → tap the coordinates.")),
+    ),
     mapsLink,
-    h("div", { class: "field", style: "margin-top:14px" }, h("span", {}, t("Nearby radius "), radiusValue), radius, h("small", {}, t("Inside this distance the gate shows up as “Nearby”."))),
+    h(
+      "div",
+      { class: "field", style: "margin-top:14px" },
+      h("span", {}, t("Nearby radius "), radiusValue),
+      radius,
+      h("small", {}, t("Inside this distance the gate shows up as “Nearby”.")),
+    ),
     h(
       "label",
       { class: "switch" },
-      h("span", { class: "txt" }, h("b", {}, t("Require proximity")), h("small", {}, t("Only open when the phone is within the radius"))),
+      h(
+        "span",
+        { class: "txt" },
+        h("b", {}, t("Require proximity")),
+        h("small", {}, t("Only open when the phone is within the radius")),
+      ),
       proximity,
     ),
     save,
-    gate.lat !== undefined ? h("button", { class: "btn danger block", type: "button", style: "margin-top:10px", onclick: () => void removeLocation() }, svg(icons.trash), t("Remove location")) : null,
+    gate.lat !== undefined
+      ? h(
+          "button",
+          { class: "btn danger block", type: "button", style: "margin-top:10px", onclick: () => void removeLocation() },
+          svg(icons.trash),
+          t("Remove location"),
+        )
+      : null,
   );
 
   const sheet = openSheet(gate.label || gate.name, t("Gate settings"), form);
 
   async function removeLocation() {
     try {
-      await api.saveGate(gate.name, { label: label.value.trim() || undefined, icon, radiusM: Number(radius.value), requireProximity: false });
+      await api.saveGate(gate.name, {
+        label: label.value.trim() || undefined,
+        icon,
+        radiusM: Number(radius.value),
+        requireProximity: false,
+      });
       toast(t("Location removed"));
       sheet.close();
       onChange();
@@ -212,11 +297,30 @@ const HOUR = 3600_000;
 export function openInviteCreate(api: Api, gates: GateView[], preselected: string[], onChange: () => void): void {
   const selected = new Set(preselected.length ? preselected : gates.length === 1 ? [gates[0]!.name] : []);
   const now = Date.now();
-  const label = h("input", { class: "input", type: "text", maxlength: "60", placeholder: t("Birthday party"), required: true, autocomplete: "off" });
+  const label = h("input", {
+    class: "input",
+    type: "text",
+    maxlength: "60",
+    placeholder: t("Birthday party"),
+    required: true,
+    autocomplete: "off",
+  });
   const from = h("input", { class: "input", type: "datetime-local", value: toLocalInput(now) });
   const until = h("input", { class: "input", type: "datetime-local", value: toLocalInput(now + 24 * HOUR) });
-  const proximity = h("input", { type: "checkbox", role: "switch", checked: true, "aria-label": t("Require proximity") });
-  const maxOpens = h("input", { class: "input", type: "number", min: "1", max: "1000", inputmode: "numeric", placeholder: t("Unlimited") });
+  const proximity = h("input", {
+    type: "checkbox",
+    role: "switch",
+    checked: true,
+    "aria-label": t("Require proximity"),
+  });
+  const maxOpens = h("input", {
+    class: "input",
+    type: "number",
+    min: "1",
+    max: "1000",
+    inputmode: "numeric",
+    placeholder: t("Unlimited"),
+  });
   const warn = h("div", { class: "banner warn", hidden: true });
 
   const updateWarn = () => {
@@ -226,7 +330,12 @@ export function openInviteCreate(api: Api, gates: GateView[], preselected: strin
     if (show) {
       warn.replaceChildren(
         svg(icons.alert),
-        h("div", {}, h("strong", {}, t("No location for {names}", { names: missing.join(", ") })), "Proximity can't be checked there. Set the location first (stand at the gate → ⋯ → Set location here)."),
+        h(
+          "div",
+          {},
+          h("strong", {}, t("No location for {names}", { names: missing.join(", ") })),
+          "Proximity can't be checked there. Set the location first (stand at the gate → ⋯ → Set location here).",
+        ),
       );
     }
   };
@@ -235,7 +344,12 @@ export function openInviteCreate(api: Api, gates: GateView[], preselected: strin
     "div",
     { class: "chips", role: "group", "aria-label": t("Gates") },
     gates.map((g) => {
-      const chip = h("button", { class: "chip", type: "button", "aria-pressed": String(selected.has(g.name)) }, svg(gateIcon(g.icon, g.name)), g.label || g.name);
+      const chip = h(
+        "button",
+        { class: "chip", type: "button", "aria-pressed": String(selected.has(g.name)) },
+        svg(gateIcon(g.icon, g.name)),
+        g.label || g.name,
+      );
       chip.addEventListener("click", () => {
         if (selected.has(g.name)) selected.delete(g.name);
         else selected.add(g.name);
@@ -249,7 +363,14 @@ export function openInviteCreate(api: Api, gates: GateView[], preselected: strin
   const quick = h(
     "div",
     { class: "chips", style: "margin:-4px 0 14px" },
-    ([[t("4 hours"), 4], [t("Tonight"), -1], [t("24 hours"), 24], [t("3 days"), 72]] as const).map(([text, hours]) => {
+    (
+      [
+        [t("4 hours"), 4],
+        [t("Tonight"), -1],
+        [t("24 hours"), 24],
+        [t("3 days"), 72],
+      ] as const
+    ).map(([text, hours]) => {
       const chip = h("button", { class: "chip", type: "button" }, text);
       chip.addEventListener("click", () => {
         const start = new Date(from.value).getTime() || Date.now();
@@ -280,7 +401,12 @@ export function openInviteCreate(api: Api, gates: GateView[], preselected: strin
     h(
       "label",
       { class: "switch" },
-      h("span", { class: "txt" }, h("b", {}, t("Guests must be at the gate")), h("small", {}, t("Recommended: a forwarded link won't work from far away"))),
+      h(
+        "span",
+        { class: "txt" },
+        h("b", {}, t("Guests must be at the gate")),
+        h("small", {}, t("Recommended: a forwarded link won't work from far away")),
+      ),
       proximity,
     ),
     h("label", { class: "field" }, h("span", {}, t("Max opens (optional)")), maxOpens),
@@ -326,7 +452,10 @@ export function openInviteResult(invite: Invite, url: string): void {
   });
   const share = h("button", { class: "btn primary block", type: "button" }, svg(icons.share), t("Share link"));
   share.addEventListener("click", async () => {
-    const text = t("{label}: open the gate from your phone. Valid until {date}.", { label: invite.label, date: formatDateTime(invite.validUntil) });
+    const text = t("{label}: open the gate from your phone. Valid until {date}.", {
+      label: invite.label,
+      date: formatDateTime(invite.validUntil),
+    });
     if (navigator.share) {
       try {
         await navigator.share({ title: invite.label, text, url });
@@ -340,7 +469,9 @@ export function openInviteResult(invite: Invite, url: string): void {
   });
   openSheet(
     t("Invite ready"),
-    t("Valid until {date}. Save it now: for security, this link is only shown once.", { date: formatDateTime(invite.validUntil) }),
+    t("Valid until {date}. Save it now: for security, this link is only shown once.", {
+      date: formatDateTime(invite.validUntil),
+    }),
     qr,
     h("div", { class: "linkbox" }, h("code", {}, url), copy),
     share,

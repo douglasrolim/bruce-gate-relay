@@ -42,7 +42,14 @@ function place(model: GateListModel): Placed[] {
 export function renderKey(model: GateListModel): string {
   return JSON.stringify([
     model.online,
-    place(model).map((p) => [p.gate.name, p.gate.label, p.gate.icon, p.gate.requireProximity, p.nearby, p.distanceM === undefined ? null : Math.round(p.distanceM / 25)]),
+    place(model).map((p) => [
+      p.gate.name,
+      p.gate.label,
+      p.gate.icon,
+      p.gate.requireProximity,
+      p.nearby,
+      p.distanceM === undefined ? null : Math.round(p.distanceM / 25),
+    ]),
   ]);
 }
 
@@ -57,9 +64,7 @@ const COLLAPSE_KEY = "others-collapsed";
 export function renderGateList(model: GateListModel, actions: GateListActions): HTMLElement {
   const placed = place(model);
   const nearby = placed.filter((p) => p.nearby).sort((a, b) => a.distanceM! - b.distanceM!);
-  const others = placed
-    .filter((p) => !p.nearby)
-    .sort((a, b) => (a.distanceM ?? Infinity) - (b.distanceM ?? Infinity));
+  const others = placed.filter((p) => !p.nearby).sort((a, b) => (a.distanceM ?? Infinity) - (b.distanceM ?? Infinity));
 
   const locked = (p: Placed): string | undefined => {
     if (!model.online) return t("Device offline");

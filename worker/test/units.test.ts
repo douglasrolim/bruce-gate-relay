@@ -87,13 +87,32 @@ describe("Invites", () => {
     const clock = new Clock();
     const store = new MemoryStore();
     const repo = new StoredInviteRepository(store, clock.now);
-    const { invite, token } = await repo.create({ label: "Party", gates: ["Garage"], validFrom: clock.t, validUntil: clock.t + 3600_000, requireProximity: true, createdBy: "root@x.com" });
+    const { invite, token } = await repo.create({
+      label: "Party",
+      gates: ["Garage"],
+      validFrom: clock.t,
+      validUntil: clock.t + 3600_000,
+      requireProximity: true,
+      createdBy: "root@x.com",
+    });
     expect(JSON.stringify([...store.data.values()]).includes(token)).toBe(false);
     expect((await repo.findByToken(token))?.id).toBe(invite.id);
     expect(await repo.findByToken("A".repeat(32))).toBeUndefined();
   });
   it("computes status", () => {
-    const base = { id: "1", tokenHash: "", label: "", gates: [], validFrom: 100, validUntil: 200, requireProximity: true, opens: 0, createdBy: "", createdAt: 0, revoked: false };
+    const base = {
+      id: "1",
+      tokenHash: "",
+      label: "",
+      gates: [],
+      validFrom: 100,
+      validUntil: 200,
+      requireProximity: true,
+      opens: 0,
+      createdBy: "",
+      createdAt: 0,
+      revoked: false,
+    };
     expect(inviteStatus(base, 50)).toBe("scheduled");
     expect(inviteStatus(base, 150)).toBe("active");
     expect(inviteStatus(base, 200)).toBe("expired");
@@ -103,8 +122,18 @@ describe("Invites", () => {
   it("authorizes guests only for their invite's gates", async () => {
     const clock = new Clock();
     const repo = new StoredInviteRepository(new MemoryStore(), clock.now);
-    const { invite } = await repo.create({ label: "P", gates: ["Garage"], validFrom: clock.t, validUntil: clock.t + 1000, requireProximity: false, createdBy: "x" });
-    const authz = new CompositeAuthorizer(new EmailAuthorizer({ allowedEmails: [], adminEmails: [] }), new InviteAuthorizer(repo));
+    const { invite } = await repo.create({
+      label: "P",
+      gates: ["Garage"],
+      validFrom: clock.t,
+      validUntil: clock.t + 1000,
+      requireProximity: false,
+      createdBy: "x",
+    });
+    const authz = new CompositeAuthorizer(
+      new EmailAuthorizer({ allowedEmails: [], adminEmails: [] }),
+      new InviteAuthorizer(repo),
+    );
     const guest = { subject: invite.id, provider: "invite", label: "P" };
     expect(await authz.allowedGates(guest, ["Garage", "Main"])).toEqual(["Garage"]);
     expect(await authz.isAdmin(guest)).toBe(false);
@@ -164,7 +193,12 @@ describe("DeviceSession", () => {
     expect(session.status().online).toBe(false);
     expect(await session.open("Garage")).toEqual({ ok: false, error: "DEVICE_OFFLINE" });
     connectDevice(session, sockets);
-    expect(session.status()).toEqual({ online: true, gates: ["Garage", "Main Entrance"], fw: "bruce-gate-relay/1.0.0", lastSeen: expect.any(Number) });
+    expect(session.status()).toEqual({
+      online: true,
+      gates: ["Garage", "Main Entrance"],
+      fw: "bruce-gate-relay/1.0.0",
+      lastSeen: expect.any(Number),
+    });
   });
 
   it("relays open commands and results", async () => {
@@ -202,7 +236,9 @@ describe("DeviceSession", () => {
   it("ignores results for unknown ids and reports malformed frames", () => {
     const { session, sockets } = make();
     const sock = connectDevice(session, sockets);
-    expect(session.handleMessage(sock, '{"v":1,"type":"result","id":"3f2b8c1e-5a4d-4e6f-9a7b-1c2d3e4f5a6b","ok":true}').ok).toBe(true);
+    expect(
+      session.handleMessage(sock, '{"v":1,"type":"result","id":"3f2b8c1e-5a4d-4e6f-9a7b-1c2d3e4f5a6b","ok":true}').ok,
+    ).toBe(true);
     expect(session.handleMessage(sock, "garbage").ok).toBe(false);
   });
 });
@@ -210,7 +246,9 @@ describe("DeviceSession", () => {
 describe("device authentication", () => {
   const TOKEN = "x".repeat(43);
   it("reads the bearer header or the query fallback", () => {
-    expect(deviceTokenFrom(new Request("https://h/device", { headers: { Authorization: `Bearer ${TOKEN}` } }))).toBe(TOKEN);
+    expect(deviceTokenFrom(new Request("https://h/device", { headers: { Authorization: `Bearer ${TOKEN}` } }))).toBe(
+      TOKEN,
+    );
     expect(deviceTokenFrom(new Request(`https://h/device?token=${TOKEN}`))).toBe(TOKEN);
   });
   it("compares in constant time and fails closed on weak config", () => {
@@ -218,7 +256,9 @@ describe("device authentication", () => {
     expect(isAuthorizedDevice(req, TOKEN)).toBe(true);
     expect(isAuthorizedDevice(req, TOKEN + "y")).toBe(false);
     expect(isAuthorizedDevice(req, undefined)).toBe(false);
-    expect(isAuthorizedDevice(new Request("https://h/device", { headers: { Authorization: "Bearer short" } }), "short")).toBe(false);
+    expect(
+      isAuthorizedDevice(new Request("https://h/device", { headers: { Authorization: "Bearer short" } }), "short"),
+    ).toBe(false);
     expect(timingSafeEqual("abc", "abc")).toBe(true);
     expect(timingSafeEqual("abc", "abd")).toBe(false);
   });

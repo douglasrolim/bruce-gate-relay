@@ -20,8 +20,7 @@ export function haversineM(a: LatLng, b: LatLng): number {
   const toRad = (d: number) => (d * Math.PI) / 180;
   const dLat = toRad(b.lat - a.lat);
   const dLng = toRad(b.lng - a.lng);
-  const h =
-    Math.sin(dLat / 2) ** 2 + Math.cos(toRad(a.lat)) * Math.cos(toRad(b.lat)) * Math.sin(dLng / 2) ** 2;
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(a.lat)) * Math.cos(toRad(b.lat)) * Math.sin(dLng / 2) ** 2;
   return 2 * EARTH_RADIUS_M * Math.asin(Math.min(1, Math.sqrt(h)));
 }
 
@@ -34,8 +33,7 @@ export function isNearby(distanceM: number, accuracyM: number, radiusM: number):
 export const MAX_ACCURACY_CREDIT_M = 100;
 
 export type ProximityCheck =
-  | { ok: true; distanceM: number }
-  | { ok: false; error: "LOCATION_REQUIRED" | "TOO_FAR"; distanceM?: number };
+  { ok: true; distanceM: number } | { ok: false; error: "LOCATION_REQUIRED" | "TOO_FAR"; distanceM?: number };
 
 export function checkProximity(gate: LatLng & { radiusM: number }, pos: Position | undefined): ProximityCheck {
   if (!pos) return { ok: false, error: "LOCATION_REQUIRED" };

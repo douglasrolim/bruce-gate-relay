@@ -1,11 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 douglasrolim and bruce-gate-relay contributors
 
-import {
-  encodeServerMessage,
-  parseDeviceMessage,
-  type DeviceErrorCode,
-} from "../protocol/messages";
+import { encodeServerMessage, parseDeviceMessage, type DeviceErrorCode } from "../protocol/messages";
 
 /** What the HTTP side needs from the device. Handlers depend on this, not on WebSockets. */
 export interface GateGateway {

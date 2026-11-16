@@ -47,7 +47,9 @@ export class GuestApp {
 
   private message(icon: string, title: string, text: string): void {
     this.root.removeAttribute("aria-busy");
-    this.root.replaceChildren(h("div", { class: "empty", style: "padding-top:22vh" }, svg(icon), h("b", {}, title), text));
+    this.root.replaceChildren(
+      h("div", { class: "empty", style: "padding-top:22vh" }, svg(icon), h("b", {}, title), text),
+    );
   }
 
   private async refresh(): Promise<void> {
@@ -78,22 +80,32 @@ export class GuestApp {
     this.lastKey = key;
     const needsLocation = d.gates.some((g) => g.requireProximity);
 
-    fill(this.main,
+    fill(
+      this.main,
       h(
         "div",
         { class: "welcome" },
         h("div", { class: "logo", "aria-hidden": "true" }, svg(icons.gate)),
         h("h1", {}, d.label),
-        h("p", {}, t("You're invited. This link works until {date}.", { date: formatDateTime(d.validUntil) }), d.opensLeft !== null ? t(" {n} opens left.", { n: d.opensLeft }) : ""),
+        h(
+          "p",
+          {},
+          t("You're invited. This link works until {date}.", { date: formatDateTime(d.validUntil) }),
+          d.opensLeft !== null ? t(" {n} opens left.", { n: d.opensLeft }) : "",
+        ),
       ),
       !d.online ? offlineBanner(d.lastSeen) : null,
       needsLocation ? locationBanner(this.loc.state, this.loc, true) : null,
       renderGateList(model, {
         open: (gate) => async () => {
-          await this.api.guestOpen(gate.name, gate.requireProximity && this.loc.position ? this.loc.position : undefined);
+          await this.api.guestOpen(
+            gate.name,
+            gate.requireProximity && this.loc.position ? this.loc.position : undefined,
+          );
           void this.refresh();
         },
-        describeError: (err) => (err instanceof ApiError ? describeError(err.code, err.body) : t("Something went wrong")),
+        describeError: (err) =>
+          err instanceof ApiError ? describeError(err.code, err.body) : t("Something went wrong"),
       }),
       h(
         "p",

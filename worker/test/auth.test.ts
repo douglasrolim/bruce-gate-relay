@@ -8,7 +8,8 @@ import { DevAuthenticator } from "../src/auth/DevAuthenticator";
 import type { Env } from "../src/env";
 import { AUD, Clock, TEAM, accessClaims, createSigner } from "./helpers";
 
-const req = (headers: Record<string, string> = {}, url = "https://gate.example.com/api/me") => new Request(url, { headers });
+const req = (headers: Record<string, string> = {}, url = "https://gate.example.com/api/me") =>
+  new Request(url, { headers });
 
 describe("CloudflareAccessAuthenticator", () => {
   it("accepts a valid Access JWT and lowercases the email", async () => {
@@ -17,7 +18,10 @@ describe("CloudflareAccessAuthenticator", () => {
     const auth = new CloudflareAccessAuthenticator(TEAM, AUD, signer.jwks, clock.now);
     const jwt = await signer.sign(accessClaims("Alice@Example.com", clock.t));
     const r = await auth.authenticate(req({ "Cf-Access-Jwt-Assertion": jwt }));
-    expect(r).toEqual({ ok: true, identity: { subject: "alice@example.com", email: "alice@example.com", provider: "cloudflare-access" } });
+    expect(r).toEqual({
+      ok: true,
+      identity: { subject: "alice@example.com", email: "alice@example.com", provider: "cloudflare-access" },
+    });
   });
 
   it("reads the CF_Authorization cookie as a fallback", async () => {
@@ -33,22 +37,37 @@ describe("CloudflareAccessAuthenticator", () => {
     const signer = await createSigner();
     const other = await createSigner();
     const auth = new CloudflareAccessAuthenticator(TEAM, AUD, signer.jwks, clock.now);
-    const check = async (jwt: string | undefined) => auth.authenticate(req(jwt ? { "Cf-Access-Jwt-Assertion": jwt } : {}));
+    const check = async (jwt: string | undefined) =>
+      auth.authenticate(req(jwt ? { "Cf-Access-Jwt-Assertion": jwt } : {}));
 
     expect(await check(undefined)).toEqual({ ok: false, reason: "MISSING_CREDENTIALS" });
     expect(await check("garbage")).toEqual({ ok: false, reason: "INVALID_CREDENTIALS" });
 
     const good = await signer.sign(accessClaims("alice@example.com", clock.t));
     const [h, p, s] = good.split(".");
-    const forgedPayload = Buffer.from(JSON.stringify(accessClaims("mallory@example.com", clock.t))).toString("base64url");
+    const forgedPayload = Buffer.from(JSON.stringify(accessClaims("mallory@example.com", clock.t))).toString(
+      "base64url",
+    );
     expect((await check(`${h}.${forgedPayload}.${s}`)).ok).toBe(false);
     expect((await check(`${h}.${p}.${s!.slice(0, -4)}AAAA`)).ok).toBe(false);
 
-    expect((await check(await other.sign(accessClaims("alice@example.com", clock.t))))).toEqual({ ok: false, reason: "INVALID_CREDENTIALS" });
-    expect((await check(await signer.sign(accessClaims("alice@example.com", clock.t, { aud: ["other-aud"] }))))).toEqual({ ok: false, reason: "INVALID_CREDENTIALS" });
-    expect((await check(await signer.sign(accessClaims("alice@example.com", clock.t, { iss: "https://evil.cloudflareaccess.com" }))))).toEqual({ ok: false, reason: "INVALID_CREDENTIALS" });
+    expect(await check(await other.sign(accessClaims("alice@example.com", clock.t)))).toEqual({
+      ok: false,
+      reason: "INVALID_CREDENTIALS",
+    });
+    expect(await check(await signer.sign(accessClaims("alice@example.com", clock.t, { aud: ["other-aud"] })))).toEqual({
+      ok: false,
+      reason: "INVALID_CREDENTIALS",
+    });
+    expect(
+      await check(
+        await signer.sign(accessClaims("alice@example.com", clock.t, { iss: "https://evil.cloudflareaccess.com" })),
+      ),
+    ).toEqual({ ok: false, reason: "INVALID_CREDENTIALS" });
 
-    const expired = await signer.sign(accessClaims("alice@example.com", clock.t, { exp: Math.floor(clock.t / 1000) - 120 }));
+    const expired = await signer.sign(
+      accessClaims("alice@example.com", clock.t, { exp: Math.floor(clock.t / 1000) - 120 }),
+    );
     expect(await check(expired)).toEqual({ ok: false, reason: "EXPIRED" });
 
     // Service-token JWTs (device) have no email and must not open the app.
@@ -84,11 +103,17 @@ describe("DevAuthenticator", () => {
   it("cannot be activated in production through configuration", async () => {
     const signer = await createSigner();
     for (const ENVIRONMENT of [undefined, "production", "prod", "Development"]) {
-      const auth = createUserAuthenticator({ ENVIRONMENT, ACCESS_TEAM_DOMAIN: TEAM, ACCESS_AUD: AUD } as Env, signer.jwks);
+      const auth = createUserAuthenticator(
+        { ENVIRONMENT, ACCESS_TEAM_DOMAIN: TEAM, ACCESS_AUD: AUD } as Env,
+        signer.jwks,
+      );
       expect(auth.name).toBe("cloudflare-access");
       expect((await auth.authenticate(req({}, "http://localhost:8787/api/me"))).ok).toBe(false);
     }
-    const devAuth = createUserAuthenticator({ ENVIRONMENT: "development", ACCESS_TEAM_DOMAIN: TEAM, ACCESS_AUD: AUD } as Env, signer.jwks);
+    const devAuth = createUserAuthenticator(
+      { ENVIRONMENT: "development", ACCESS_TEAM_DOMAIN: TEAM, ACCESS_AUD: AUD } as Env,
+      signer.jwks,
+    );
     expect((await devAuth.authenticate(req({}, "http://localhost:8787/api/me"))).ok).toBe(true);
   });
 

@@ -40,7 +40,13 @@ export function locationBanner(state: LocationState, loc: LocationService, requi
           "div",
           { class: "actions" },
           h("button", { class: "btn primary sm", type: "button", onclick: () => loc.request() }, t("Allow location")),
-          required ? null : h("button", { class: "btn ghost sm", type: "button", onclick: () => loc.dismissExplainer() }, t("Not now")),
+          required
+            ? null
+            : h(
+                "button",
+                { class: "btn ghost sm", type: "button", onclick: () => loc.dismissExplainer() },
+                t("Not now"),
+              ),
         ),
       ),
     );

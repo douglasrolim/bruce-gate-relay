@@ -1,0 +1,10 @@
+{
+  // The browser client is type-checked on its own: the Workers runtime types
+  // declare a global `Element` (HTMLRewriter) that conflicts with the DOM.
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "types": []
+  },
+  "include": ["."]
+}

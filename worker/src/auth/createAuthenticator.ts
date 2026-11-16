@@ -3,11 +3,7 @@
 
 import type { Env } from "../env";
 import { FirstMatchAuthenticator, type Authenticator } from "./Authenticator";
-import {
-  CloudflareAccessAuthenticator,
-  HttpJwksProvider,
-  type JwksProvider,
-} from "./CloudflareAccessAuthenticator";
+import { CloudflareAccessAuthenticator, HttpJwksProvider, type JwksProvider } from "./CloudflareAccessAuthenticator";
 import { DevAuthenticator } from "./DevAuthenticator";
 
 export const SUPPORTED_AUTH_MODES = ["cloudflare-access"] as const;
@@ -35,9 +31,7 @@ export function createUserAuthenticator(env: Env, jwks?: JwksProvider): Authenti
     switch (mode) {
       case "cloudflare-access": {
         const team = env.ACCESS_TEAM_DOMAIN ?? "";
-        authenticators.push(
-          new CloudflareAccessAuthenticator(team, env.ACCESS_AUD ?? "", jwks ?? getSharedJwks(team)),
-        );
+        authenticators.push(new CloudflareAccessAuthenticator(team, env.ACCESS_AUD ?? "", jwks ?? getSharedJwks(team)));
         break;
       }
       default:

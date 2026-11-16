@@ -128,7 +128,11 @@ export function encodeQr(text: string): boolean[][] {
     set(6, i, i % 2 === 0);
     set(i, 6, i % 2 === 0);
   }
-  for (const [cx, cy] of [[3, 3], [size - 4, 3], [3, size - 4]] as const) {
+  for (const [cx, cy] of [
+    [3, 3],
+    [size - 4, 3],
+    [3, size - 4],
+  ] as const) {
     for (let dy = -4; dy <= 4; dy++) {
       for (let dx = -4; dx <= 4; dx++) {
         const x = cx + dx;

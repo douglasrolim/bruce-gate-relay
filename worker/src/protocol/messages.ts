@@ -9,13 +9,7 @@
 export const PROTOCOL_VERSION = 1;
 
 /** Error codes a device may report in a `result` message. */
-export const DEVICE_ERROR_CODES = [
-  "GATE_NOT_FOUND",
-  "INVALID_NAME",
-  "TX_FAILED",
-  "BUSY",
-  "INTERNAL",
-] as const;
+export const DEVICE_ERROR_CODES = ["GATE_NOT_FOUND", "INVALID_NAME", "TX_FAILED", "BUSY", "INTERNAL"] as const;
 export type DeviceErrorCode = (typeof DEVICE_ERROR_CODES)[number];
 
 export interface HelloMessage {
@@ -110,9 +104,7 @@ export function parseDeviceMessage(raw: string | ArrayBuffer): ParseResult<Devic
       const msg: ResultMessage = { v: 1, type: "result", id: data.id, ok: data.ok };
       if (!data.ok) {
         const err = data.error;
-        msg.error = (DEVICE_ERROR_CODES as readonly unknown[]).includes(err)
-          ? (err as DeviceErrorCode)
-          : "INTERNAL";
+        msg.error = (DEVICE_ERROR_CODES as readonly unknown[]).includes(err) ? (err as DeviceErrorCode) : "INTERNAL";
       }
       return { ok: true, value: msg };
     }

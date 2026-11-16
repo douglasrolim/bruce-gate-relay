@@ -27,9 +27,7 @@ export const GUEST_POLICY: RatePolicy = {
   windowMs: 60 * 60 * 1000,
 };
 
-export type RateDecision =
-  | { ok: true }
-  | { ok: false; error: "COOLDOWN" | "RATE_LIMITED"; retryAfterS: number };
+export type RateDecision = { ok: true } | { ok: false; error: "COOLDOWN" | "RATE_LIMITED"; retryAfterS: number };
 
 export interface RateLimiter {
   /** Checks the limits and, when allowed, records the attempt atomically. */
@@ -52,7 +50,11 @@ export class StoredRateLimiter implements RateLimiter {
     const gateKey = `rl-gate:${gate}`;
     const lastGate = (await this.store.get<number>(gateKey)) ?? 0;
     if (now - lastGate < policy.gateCooldownMs) {
-      return { ok: false, error: "COOLDOWN", retryAfterS: Math.ceil((policy.gateCooldownMs - (now - lastGate)) / 1000) };
+      return {
+        ok: false,
+        error: "COOLDOWN",
+        retryAfterS: Math.ceil((policy.gateCooldownMs - (now - lastGate)) / 1000),
+      };
     }
 
     const subjectKey = `rl-subject:${subject}`;
