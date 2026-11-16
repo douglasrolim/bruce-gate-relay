@@ -1,0 +1,36 @@
+# Copy to wrangler.toml (gitignored) and fill in the placeholders.
+# See README.md → "Configure and deploy the Worker" for every field.
+
+name = "bruce-gate-relay"
+main = "src/index.ts"
+compatibility_date = "2026-11-01"
+# account_id = "<your Cloudflare account id>"   # optional: wrangler asks if you have several accounts
+
+# Serve only on your Access-protected custom domain, never on *.workers.dev.
+workers_dev = false
+routes = [{ pattern = "gate.example.com", custom_domain = true }]
+
+[build]
+command = "node scripts/build-client.mjs --check"
+
+[[durable_objects.bindings]]
+name = "GATE_HUB"
+class_name = "GateHub"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["GateHub"]
+
+[vars]
+ENVIRONMENT = "production"
+AUTH_MODES = "cloudflare-access"
+ACCESS_TEAM_DOMAIN = "<team>.cloudflareaccess.com"
+ACCESS_AUD = "<application AUD tag>"
+# Comma-separated. Admins are always allowed.
+ALLOWED_EMAILS = "alice@example.com"
+ADMIN_EMAILS = "you@example.com"
+# Optional per-gate permissions (JSON). Empty = every allowed user may open every gate.
+# GATE_PERMISSIONS = '{"bob@example.com":["Garage"],"*":["Garage","Main Entrance"]}'
+GATE_PERMISSIONS = ""
+
+# Secret (never here): npx wrangler secret put DEVICE_TOKEN

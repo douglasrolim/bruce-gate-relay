@@ -1,0 +1,7 @@
+# Local development only (wrangler dev). Copy to .dev.vars (gitignored).
+ENVIRONMENT=development
+DEV_USER_EMAIL=you@example.com
+ALLOWED_EMAILS=you@example.com
+ADMIN_EMAILS=you@example.com
+# Any random string of 32+ characters; the fake device uses the same value.
+DEVICE_TOKEN=dev-device-token-change-me-0123456789abcdef
