@@ -39,8 +39,8 @@ const PT: Record<string, string> = {
   "Hold to open": "Segure para abrir",
   "Keep holding to open": "Continue segurando para abrir",
   "Press Enter again to open": "Pressione Enter de novo para abrir",
-  "Opening…": "Abrindo…",
-  Opened: "Aberto",
+  "Sending…": "Enviando…",
+  "Signal sent": "Sinal enviado",
   "Try again": "Tente de novo",
   "{title}. Press and hold to open. Keyboard: press Enter twice.":
     "{title}. Pressione e segure para abrir. Teclado: pressione Enter duas vezes.",
@@ -101,10 +101,10 @@ const PT: Record<string, string> = {
   "Use another account": "Usar outra conta",
   // Activity
   "No activity yet": "Nenhuma atividade ainda",
-  "Every open shows up here: who, which gate and when.": "Cada abertura aparece aqui: quem, qual portão e quando.",
+  "Every open shows up here: who, which gate and when.": "Cada acionamento aparece aqui: quem, qual portão e quando.",
   "Couldn't load activity": "Não foi possível carregar a atividade",
   " (guest)": " (convidado)",
-  " opened ": " abriu ",
+  " triggered ": " acionou ",
   " tried ": " tentou abrir ",
   " · ≈{d} m away": " · a ≈{d} m",
   "Guest: {label}": "Convidado: {label}",

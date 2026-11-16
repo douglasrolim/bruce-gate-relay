@@ -104,11 +104,11 @@ function runOpen(
   return async () => {
     if (root.dataset.busy === "1") return;
     root.dataset.busy = "1";
-    setState("sending", t("Opening…"));
+    setState("sending", t("Sending…"));
     try {
       await opts.onOpen();
       vibrate([30, 60, 30]);
-      setState("success", t("Opened"));
+      setState("success", t("Signal sent"));
       setTimeout(() => setState("idle"), 3000);
     } catch (err) {
       vibrate([120, 60, 120]);
@@ -250,9 +250,9 @@ export function createHero(opts: GateControlOptions & { eyebrow: string }): HTML
     );
     labelText.textContent =
       s === "sending"
-        ? t("Opening…")
+        ? t("Sending…")
         : s === "success"
-          ? t("Opened")
+          ? t("Signal sent")
           : s === "error"
             ? t("Try again")
             : t("Hold to open");

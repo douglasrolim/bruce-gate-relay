@@ -31,7 +31,9 @@ flowchart LR
 1. You open the web app on your phone and sign in with Google (Cloudflare Access).
 2. You **press and hold** a gate. The Worker relays the command to the T-Embed, which keeps an
    outbound WebSocket open (no public IP, no port forwarding).
-3. The T-Embed transmits the matching `.sub` file and reports back. The app shows *Opened* ✓.
+3. The T-Embed transmits the matching `.sub` file and reports back. The app shows *Signal sent* ✓.
+   Fixed-code gates are one-way: the app confirms the **transmission**, not the gate position
+   (an optional gate sensor is on the roadmap).
 
 Features: mobile-first PWA (English/Portuguese, light/dark), nearby gates first using your phone's
 location, guest invites with QR code and expiry, per-person gate permissions, activity log,
@@ -133,7 +135,7 @@ Open `https://gate.example.com`, sign in with Google, and add it to your home sc
 - **Android (Chrome):** ⋮ menu → *Add to Home screen* / *Install app*.
 - **iPhone (Safari):** Share → *Add to Home Screen*.
 
-Press and hold a gate card for about a second. You'll feel a vibration (Android) and see *Opened* ✓.
+Press and hold a gate card for about a second. You'll feel a vibration (Android) and see *Signal sent* ✓.
 
 ### 10. Set gate locations (optional, recommended)
 
@@ -240,7 +242,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md).
 | *Session expired, reload* | Cloudflare Access session ended: reload to sign in again |
 | *This account can't open gates* | Email allowed by Access but missing from `ALLOWED_EMAILS` |
 | *No answer from the device* | Device busy or Wi-Fi unstable; check the device screen |
-| *Opened* but the gate didn't move | Out of radio range, or the `.sub` is a rolling-code/raw capture that doesn't replay |
+| *Signal sent* but the gate didn't move | Out of radio range, or the `.sub` is a rolling-code/raw capture that doesn't replay |
 | Guest link asks for Google login | The Bypass application for `/i/*` and `/api/guest/*` is missing |
 
 ## Roadmap
@@ -248,6 +250,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md).
 - More auth modes (password, direct Google OIDC, passkeys, TOTP, API tokens for Apple Shortcuts/Home Assistant).
 - Optional JavaScript polling script for Bruce (no custom firmware), see the evaluation in
   [docs/architecture.md](docs/architecture.md#alternative-without-a-firmware-fork-evaluated).
+- Optional gate position sensor (open/closed), so the app can show the real state.
 - Propose the Gate Relay module upstream to Bruce.
 
 ## Contributing, license and credits

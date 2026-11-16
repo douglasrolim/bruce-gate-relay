@@ -265,7 +265,7 @@ export class UserApp {
               { class: "what" },
               h("b", {}, name),
               guest ? t(" (guest)") : "",
-              e.ok ? t(" opened ") : t(" tried "),
+              e.ok ? t(" triggered ") : t(" tried "),
               h("b", {}, e.gate),
               h(
                 "span",

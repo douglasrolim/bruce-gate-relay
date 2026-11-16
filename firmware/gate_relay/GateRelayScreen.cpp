@@ -33,7 +33,7 @@ void GateRelayScreen::update(const ScreenState &s) {
 
     if (s.events) {
         tft.setTextColor(s.last.ok ? TFT_GREEN : TFT_RED, bruceConfig.bgColor);
-        padprintln(String(s.last.ok ? "Opened: " : "Failed: ") + s.last.gate.c_str());
+        padprintln(String(s.last.ok ? "Sent:   " : "Failed: ") + s.last.gate.c_str());
         if (!s.last.ok) padprintln(String("Error:   ") + s.last.error.c_str());
         tft.setTextColor(bruceConfig.priColor, bruceConfig.bgColor);
         padprintln(String(ago) + " s ago  (" + String(s.events) + " total)");
