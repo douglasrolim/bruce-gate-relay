@@ -1,0 +1,7 @@
+{
+  "url": "wss://gate.example.com/device",
+  "token": "<DEVICE_TOKEN: 32+ random characters>",
+  "accessClientId": "<service token client id>.access",
+  "accessClientSecret": "<service token client secret>",
+  "folder": "/BruceRF/gates"
+}
