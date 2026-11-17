@@ -1,43 +1,41 @@
 # Firmware setup (T-Embed CC1101 + Bruce)
 
-The Gate Relay is a small module compiled **into Bruce**. Your Bruce fork carries only a few lines of
-changes (menu entry, startup app, one library), applied by `firmware/scripts/gate_relay_fw.py`.
+The Gate Relay is a small module compiled **into Bruce**. No fork of Bruce is needed:
+`firmware/scripts/gate_relay_fw.py` downloads the Bruce release named in
+[`firmware/BRUCE_VERSION`](../firmware/BRUCE_VERSION), copies the module in and adds a few marked lines
+(the RF menu entry, the startup app, the WebSocket library and a FastLED pin).
+
+Most people don't need to build anything: ready-to-flash images are published under
+[Releases](https://github.com/douglasrolim/bruce-gate-relay/releases) (see *Option A* below).
 
 ## 1. Back up the device first
 
-Flashing replaces the firmware. The `upload` target writes only the bootloader, partition table and
-app, so files on LittleFS/SD normally survive, but **back up anyway**:
-
 ```bash
-python -m esptool --port COM5 read-flash 0 ALL flash-backup.bin   # Windows: COMx, Linux: /dev/ttyACM0
+python -m esptool --port COM5 read_flash 0 ALL flash-backup.bin   # Windows: COMx, Linux: /dev/ttyACM0
 ```
 
-Also copy your `.sub` files somewhere safe. Over USB, MD5-verified:
-`python tools/bruce-serial/bruce_serial.py --port COM5 backup-subs backup/sub` (or use the Bruce WebUI).
-To restore the exact previous state: `python -m esptool --port COM5 write-flash 0 flash-backup.bin`.
-The full, step-by-step process is in the [walkthrough](walkthrough.md).
+Also copy your `.sub` files somewhere safe (Bruce WebUI or the serial `cat` command). Flashing a Gate Relay
+image does not touch the LittleFS/SD data, but backups are cheap. To restore the exact previous state:
+`python -m esptool --port COM5 write_flash 0 flash-backup.bin`.
 
-## 2. Get the sources
+Finding the port: Windows Device Manager → *Ports (COM & LPT)* → "USB Serial Device" (VID 303A).
+Bluetooth COM ports are not it. Linux: `/dev/ttyACM0`; macOS: `/dev/cu.usbmodem*`.
 
-```bash
-git clone --recursive https://github.com/<you>/bruce-gate-relay
-python -m pip install platformio
-```
+## 2. Option A: flash a release (no build)
 
-`firmware/bruce` is a submodule pointing at your Bruce fork, pinned to the **same tag** as the firmware
-on your device (check *Config → About* on the device, or the serial command `info`).
-
-To create the fork the first time: fork <https://github.com/BruceDevices/firmware> on GitHub, then
+1. Download `bruce-<version>-gate-relay-lilygo-t-embed-cc1101.bin` and its `.sha256` from
+   [Releases](https://github.com/douglasrolim/bruce-gate-relay/releases).
+2. Check it: `certutil -hashfile <file> SHA256` (Windows) or `sha256sum <file>` (Linux/macOS).
+3. Flash the merged image (bootloader + partition table + app) at address 0:
 
 ```bash
-git submodule add https://github.com/<you>/Bruce firmware/bruce
-git -C firmware/bruce checkout -b gate-relay <tag, e.g. 1.16.1>
-python firmware/scripts/gate_relay_fw.py integrate
-git -C firmware/bruce add -A && git -C firmware/bruce commit -m "feat: add Gate Relay module"
-git -C firmware/bruce push -u origin gate-relay
+python -m pip install esptool
+python -m esptool --port COM5 write_flash 0x0 bruce-1.16.1-gate-relay-lilygo-t-embed-cc1101.bin
 ```
 
-## 3. Build and flash
+The image ends well before the LittleFS partition, so your files stay.
+
+## 3. Option B: build from source
 
 ### Windows notes
 
@@ -55,11 +53,27 @@ git -C firmware/bruce push -u origin gate-relay
 - `integrate` pins FastLED to 3.10.3: newer FastLED releases clash with Bruce 1.16.1 (`#define FP`).
 
 ```bash
-python firmware/scripts/gate_relay_fw.py test                 # host unit tests (no hardware)
-python firmware/scripts/gate_relay_fw.py build                # env lilygo-t-embed-cc1101
-python firmware/scripts/gate_relay_fw.py flash --port COM5
+python -m pip install platformio
+python firmware/scripts/gate_relay_fw.py test                 # host unit tests (no hardware, needs gcc)
+python firmware/scripts/gate_relay_fw.py build                # downloads Bruce if needed, then builds
+python firmware/scripts/gate_relay_fw.py flash --port COM5    # build + upload (app partitions only)
+python firmware/scripts/gate_relay_fw.py package              # build + dist/<name>.bin and .sha256
 python firmware/scripts/gate_relay_fw.py monitor --port COM5  # serial log, 115200 baud
 ```
+
+`--bruce-tag 1.17` tries another Bruce release (the checkout in `firmware/bruce/` is replaced).
+
+### When Bruce releases a new version
+
+The [Firmware release](../.github/workflows/release.yml) workflow does this every Monday: it builds the
+latest Bruce with the module and publishes a release `bruce-<tag>`, or opens an issue if the build breaks.
+You can also run it by hand (*Actions → Firmware release → Run workflow*, optional Bruce tag).
+
+Locally: `python firmware/scripts/gate_relay_fw.py build --bruce-tag <new tag>`. If it builds and works on
+the device, update `firmware/BRUCE_VERSION` and commit. If an anchor moved in Bruce, `integrate` stops with
+a clear message naming the file to look at.
+
+**Careful:** the official Bruce installer (Web Flasher, OTA) installs Bruce *without* Gate Relay.
 
 Finding the port: Windows Device Manager → *Ports (COM & LPT)* → "USB Serial Device" (VID 303A).
 Bluetooth COM ports are not it. Linux: `/dev/ttyACM0`; macOS: `/dev/cu.usbmodem*`.
