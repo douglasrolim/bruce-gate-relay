@@ -39,7 +39,10 @@ void RelayClient::begin(const GateRelayConfig &config, const char *caPem, TextHa
 
     const WsUrl &e = config.endpoint;
     if (e.secure) {
-        ws_.beginSslWithCA(e.host.c_str(), e.port, e.path.c_str(), caPem, "");
+        // Not beginSslWithCA(): WebSockets 2.7.3 never initializes _client_cert/_client_key,
+        // so garbage pointers reach mbedtls_x509_crt_parse() and crash (LoadProhibited in strlen).
+        // beginSslWithClientKey() sets both to nullptr and then calls beginSslWithCA().
+        ws_.beginSslWithClientKey(e.host.c_str(), e.port, e.path.c_str(), caPem, nullptr, nullptr, "");
     } else {
         ws_.begin(e.host.c_str(), e.port, e.path.c_str(), "");
     }
