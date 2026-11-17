@@ -82,40 +82,86 @@ Protocol, API and code map: [docs/architecture.md](docs/architecture.md).
 
 ## Supported hardware
 
-Gate Relay is a Bruce module, so it runs on Bruce devices that have **Wi-Fi** (every ESP32 does) and a
-**Sub-GHz radio**. The radio can be built in (a CC1101 chip) or an external module that Bruce supports: a
-CC1101 on SPI, or a simple 433 MHz transmitter. You pick it in Bruce under **Config → RF**. Gate Relay
-transmits through Bruce's own RF code, so whatever replays your `.sub` file in Bruce also works here.
+**Any device that runs [Bruce](https://bruce.computer/) and has Wi-Fi plus a Sub-GHz radio should work.**
+Gate Relay doesn't talk to the radio itself: it asks Bruce to transmit the `.sub` file, exactly like
+*RF → Custom SubGHz* does. If Bruce can replay your gate signal on a device, and that device has Wi-Fi
+(every ESP32 does), Gate Relay can open the gate from your phone.
 
-Every [release](https://github.com/douglasrolim/bruce-gate-relay/releases) includes an image for each board
-in [`firmware/BOARDS`](firmware/BOARDS):
+The radio can be:
 
-| Device | Bruce env | Sub-GHz radio | Status |
-|---|---|---|---|
-| LilyGO T-Embed CC1101 / CC1101 Plus | `lilygo-t-embed-cc1101` | built-in CC1101 | ✅ tested |
-| Bruce Reaper RF | `reaper` | built-in CC1101 | 🧪 builds |
-| Smoochiee V2 | `smoochiee-board` | built-in CC1101 | 🧪 builds |
-| ESP32-C5 | `esp32-c5` | CC1101 | 🧪 builds |
-| M5Stack Cardputer / Cardputer Adv | `m5stack-cardputer` | external module | 🧪 builds |
-| M5Stack StickS3, StickC Plus 2, StickC Plus 1.1 | `m5stack-sticks3`, `m5stack-cplus2`, `m5stack-cplus1_1` | external module | 🧪 builds |
-| M5Stack Core, Core2, CoreS3 / SE | `m5stack-core16mb`, `m5stack-core2`, `m5stack-cores3` | external module | 🧪 builds |
-| CYD-2432S028, CYD-3248S035 ("Cheap Yellow Display") | `CYD-2432S028`, `CYD-3248S035R` | external module | 🧪 builds |
-| LilyGO T-LoRa Pager, T-Display-S3 | `lilygo-t-lora-pager`, `lilygo-t-display-s3` | external module | 🧪 builds |
-| Elecrow 24B, Advance 3.5" S3 | `elecrow-24B`, `elecrow-advance-35-s3` | external module | 🧪 builds |
+- **built in**: a CC1101 chip, as on the T-Embed CC1101, Bruce Reaper RF or Smoochiee;
+- **an external CC1101** wired over SPI (covers 300–348, 387–464 and 779–928 MHz);
+- **a simple 433 MHz transmitter** module (fixed frequency, ASK/OOK).
 
-**✅ tested** means opened a real gate. **🧪 builds** means the image compiles in CI, but nobody has
-reported it on hardware yet. The release notes list the boards that built for that Bruce version. Tried
-it on one of these? Please open an issue or a PR to mark it tested. For wiring an external module, see Bruce's
+On devices without a built-in radio, wire the module as shown in Bruce's
 [connection diagrams](https://github.com/BruceDevices/firmware/tree/main/media/connections) and
-[wiki](https://wiki.bruce.computer), and the device list at [bruce.computer/boards](https://bruce.computer/boards).
+[wiki](https://wiki.bruce.computer), then select it in Bruce under **Config → RF**.
 
-Notes:
+### Tested
 
-- A **simple 433 MHz transmitter** only sends on its own frequency (usually 433.92 MHz) with ASK/OOK. That
-  covers most fixed-code gates in Brazil and Europe. Remotes on 315, 390 or 868 MHz need a CC1101.
-- Boards with 4 MB of flash have less room. If one of them stops building, it's dropped from that release
+| Device | Radio | Bruce | Gate |
+|---|---|---|---|
+| **LilyGO T-Embed CC1101 Plus** | built-in CC1101 | 1.16.1 | 433.92 MHz fixed code (RcSwitch, 28 bits): ✅ opened from the phone |
+
+Got it working on another device? Please [open an issue](https://github.com/douglasrolim/bruce-gate-relay/issues/new)
+or a PR with the device, radio, Bruce version and gate type, so it can be added here.
+
+### Ready-made images
+
+Every [release](https://github.com/douglasrolim/bruce-gate-relay/releases) has an image for each board in
+[`firmware/BOARDS`](firmware/BOARDS). These are built in CI but, except for the T-Embed, **not tested on hardware yet**:
+
+| Device | Bruce env | Sub-GHz radio |
+|---|---|---|
+| LilyGO T-Embed CC1101 / CC1101 Plus | `lilygo-t-embed-cc1101` | built-in CC1101 (**tested**) |
+| Bruce Reaper RF | `reaper` | built-in CC1101 |
+| Smoochiee V2 | `smoochiee-board` | built-in CC1101 |
+| ESP32-C5 | `esp32-c5` | CC1101 |
+| M5Stack Cardputer / Cardputer Adv | `m5stack-cardputer` | external module |
+| M5Stack StickS3 | `m5stack-sticks3` | external module |
+| M5Stack StickC Plus 2 | `m5stack-cplus2` | external module |
+| M5Stack StickC Plus 1.1 | `m5stack-cplus1_1` | external module |
+| M5Stack Core (16 MB) | `m5stack-core16mb` | external module |
+| M5Stack Core2 | `m5stack-core2` | external module |
+| M5Stack CoreS3 / CoreS3 SE | `m5stack-cores3` | external module |
+| CYD-2432S028 ("Cheap Yellow Display") | `CYD-2432S028` | external module |
+| CYD-3248S035 (resistive) | `CYD-3248S035R` | external module |
+| LilyGO T-LoRa Pager | `lilygo-t-lora-pager` | external module |
+| LilyGO T-Display-S3 | `lilygo-t-display-s3` | external module |
+| Elecrow 2.4" (24B) | `elecrow-24B` | external module |
+| Elecrow Advance 3.5" S3 | `elecrow-advance-35-s3` | external module |
+
+### Other Bruce devices
+
+Bruce supports more boards than the list above. Any of them with an RF module should work too: build the
+image yourself with `python firmware/scripts/gate_relay_fw.py flash --port <port> --env <bruce env>`
+(see [Install the firmware](#5-install-the-firmware)). Examples of other Bruce envs:
+
+| Family | Bruce envs |
+|---|---|
+| ESP32 Marauder boards | `Marauder-V4-V6`, `Marauder-v61`, `Marauder-v7`, `Marauder-Mini` |
+| Awok / WaveSentry / Phantom / XK404 | `Awok-Touch`, `Awok-Mini`, `WaveSentry-R1`, `Phantom_S024R`, `xk404` |
+| Other CYD variants | `CYD-2432W328C`, `CYD-2432W328R-or-S024R`, `CYD-3248S035C`, `CYD-2USB`, `nm-cyd-c5` |
+| More Elecrow screens | `elecrow-28B`, `elecrow-35B` |
+| More LilyGO | `lilygo-t-display-S3-pro`, `lilygo-t-display-s3-touch`, `lilygo-t-hmi`, `lilygo-t-display-ttgo`, `lilygo-t-embed` (no CC1101: external module) |
+| More M5Stack / others | `m5stack-dinmeter`, `m5stack-core4mb`, `arduino-nesso-n1`, `ES3C28P` |
+| DIY | `esp32-s3-devkitc-1`, `esp32-s3-devkitc-1-psram` + a CC1101 module |
+
+The full, current list is in Bruce's [`boards/`](https://github.com/BruceDevices/firmware/tree/main/boards)
+folder and at [bruce.computer/boards](https://bruce.computer/boards). Bruce marks the LilyGO T-Deck and
+T-Watch-S3 as having no Sub-GHz support, so they won't work. If a board builds and works for you, add it to
+`firmware/BOARDS` in a PR, and the next release will ship an image for it.
+
+### Things to know
+
+- **Frequency:** a simple 433 MHz transmitter only sends on its own frequency (usually 433.92 MHz) with
+  ASK/OOK. That covers most fixed-code gates in Brazil and Europe. Remotes on 315, 390 or 868 MHz need a CC1101.
+- **Flash size:** boards with 4 MB of flash have less room. If one stops building, that release leaves it out
   and the notes say so.
-- To add a board, add its Bruce env to `firmware/BOARDS`. The next release builds it.
+- **Screen and buttons:** the Gate Relay screen is plain text and adapts to the display. Use your board's
+  "back" button to leave it.
+- **Range:** small external antennas reach less far than the T-Embed's. Place the device where Bruce's own
+  replay reliably opens the gate.
 
 ## What you need
 
