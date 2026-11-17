@@ -1,0 +1,110 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Publishes ready-to-flash firmware (Bruce + Gate Relay) as GitHub Releases.
+#
+# - Every Monday it checks for a new Bruce release. If it builds with the module, a release
+#   "bruce-<tag>" is published with the .bin; if it doesn't, an issue is opened.
+# - Pushing a tag "v*" (a new bruce-gate-relay version) publishes a build for firmware/BRUCE_VERSION.
+# - "Run workflow" builds any Bruce tag on demand.
+name: Firmware release
+
+on:
+  schedule:
+    - cron: "17 9 * * 1"
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      bruce_tag:
+        description: "Bruce release tag (empty = latest)"
+        required: false
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: firmware-release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Decide what to build
+        id: plan
+        run: |
+          if [ "${{ github.event_name }}" = "push" ]; then
+            BRUCE_TAG=$(cat firmware/BRUCE_VERSION)
+            RELEASE_TAG="${GITHUB_REF_NAME}"
+          else
+            BRUCE_TAG="${{ github.event.inputs.bruce_tag }}"
+            if [ -z "$BRUCE_TAG" ]; then
+              BRUCE_TAG=$(gh api repos/BruceDevices/firmware/releases/latest --jq .tag_name)
+            fi
+            RELEASE_TAG="bruce-${BRUCE_TAG}"
+            if [ "${{ github.event_name }}" = "schedule" ] && gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+              echo "Release $RELEASE_TAG already exists; nothing to do."
+              echo "skip=true" >> "$GITHUB_OUTPUT"
+            fi
+          fi
+          echo "bruce_tag=$BRUCE_TAG" >> "$GITHUB_OUTPUT"
+          echo "release_tag=$RELEASE_TAG" >> "$GITHUB_OUTPUT"
+          echo "Bruce $BRUCE_TAG -> release $RELEASE_TAG"
+
+      - uses: actions/setup-python@v5
+        if: steps.plan.outputs.skip != 'true'
+        with:
+          python-version: "3.12"
+
+      - uses: actions/cache@v4
+        if: steps.plan.outputs.skip != 'true'
+        with:
+          path: ~/.platformio
+          key: pio-${{ steps.plan.outputs.bruce_tag }}
+
+      - name: Build
+        id: build
+        if: steps.plan.outputs.skip != 'true'
+        run: |
+          pip install platformio
+          python firmware/scripts/gate_relay_fw.py package --bruce-tag "${{ steps.plan.outputs.bruce_tag }}" 2>&1 | tee build.log
+
+      - name: Publish release
+        if: steps.plan.outputs.skip != 'true' && steps.build.outcome == 'success'
+        run: |
+          BRUCE_TAG="${{ steps.plan.outputs.bruce_tag }}"
+          cat > notes.md <<NOTES
+          Ready-to-flash firmware for the **LilyGO T-Embed CC1101**: Bruce \`${BRUCE_TAG}\` + Gate Relay (\`${GITHUB_SHA::7}\`).
+
+          **Flash** (keeps your files on LittleFS/SD; back up first, see the README):
+
+          \`\`\`
+          python -m esptool --port COM5 write_flash 0x0 bruce-${BRUCE_TAG}-gate-relay-lilygo-t-embed-cc1101.bin
+          \`\`\`
+
+          Verify the download with the \`.sha256\` file. Use only as described in LEGAL.md.
+          NOTES
+          gh release create "${{ steps.plan.outputs.release_tag }}" dist/* \
+            --title "Bruce ${BRUCE_TAG} + Gate Relay" --notes-file notes.md --target "$GITHUB_SHA"
+
+      - name: Report a build failure
+        if: failure() && steps.build.outcome == 'failure'
+        run: |
+          TITLE="Gate Relay does not build with Bruce ${{ steps.plan.outputs.bruce_tag }}"
+          if gh issue list --state open --search "$TITLE in:title" --json number --jq '.[0].number' | grep -q .; then
+            echo "Issue already open"; exit 0
+          fi
+          {
+            echo "The scheduled build of Bruce \`${{ steps.plan.outputs.bruce_tag }}\` with the Gate Relay module failed."
+            echo
+            echo "Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            echo
+            echo '```'
+            tail -n 60 build.log
+            echo '```'
+          } > issue.md
+          gh issue create --title "$TITLE" --body-file issue.md --label firmware || gh issue create --title "$TITLE" --body-file issue.md

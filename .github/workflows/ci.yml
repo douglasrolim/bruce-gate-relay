@@ -40,20 +40,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          submodules: recursive
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
       - uses: actions/cache@v4
         with:
           path: ~/.platformio
-          key: pio-${{ hashFiles('firmware/bruce/platformio.ini') }}
+          key: pio-${{ hashFiles('firmware/BRUCE_VERSION') }}
       - run: pip install platformio
-      - name: Build Bruce with the Gate Relay module
-        run: |
-          if [ ! -f firmware/bruce/platformio.ini ]; then echo "No Bruce submodule yet; skipping"; exit 0; fi
-          python firmware/scripts/gate_relay_fw.py build
+      - name: Build Bruce (firmware/BRUCE_VERSION) with the Gate Relay module
+        run: python firmware/scripts/gate_relay_fw.py package
+      - uses: actions/upload-artifact@v4
+        with:
+          name: firmware
+          path: dist/*
 
   secrets:
     runs-on: ubuntu-latest
