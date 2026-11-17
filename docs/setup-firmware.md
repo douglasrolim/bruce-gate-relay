@@ -1,4 +1,4 @@
-# Firmware setup (T-Embed CC1101 + Bruce)
+# Firmware setup (Bruce + Gate Relay)
 
 The Gate Relay is a small module compiled **into Bruce**. No fork of Bruce is needed:
 `firmware/scripts/gate_relay_fw.py` downloads the Bruce release named in
@@ -25,7 +25,7 @@ Bluetooth COM ports are not it. Linux: `/dev/ttyACM0`; macOS: `/dev/cu.usbmodem*
 
 ## 2. Option A: flash a release (no build)
 
-1. Download `bruce-<version>-gate-relay-lilygo-t-embed-cc1101.bin` and its `.sha256` from
+1. Download `bruce-<version>-gate-relay-<board>.bin` for your board (see [`firmware/BOARDS`](../firmware/BOARDS)) and its `.sha256` from
    [Releases](https://github.com/douglasrolim/bruce-gate-relay/releases).
 2. Check it: `certutil -hashfile <file> SHA256` (Windows) or `sha256sum <file>` (Linux/macOS).
 3. Flash the merged image (bootloader + partition table + app) at address 0:
@@ -63,7 +63,10 @@ python firmware/scripts/gate_relay_fw.py package              # build + dist/<na
 python firmware/scripts/gate_relay_fw.py monitor --port COM5  # serial log, 115200 baud
 ```
 
-`--bruce-tag 1.17` tries another Bruce release (the checkout in `firmware/bruce/` is replaced).
+`--bruce-tag 1.17` tries another Bruce release (the checkout in `firmware/bruce/` is replaced), and
+`--env <board>` builds for another device listed in [`firmware/BOARDS`](../firmware/BOARDS) (default:
+`lilygo-t-embed-cc1101`). On boards without a built-in CC1101, select your radio module in Bruce under
+**Config → RF** before using Gate Relay.
 
 ### When Bruce releases a new version
 

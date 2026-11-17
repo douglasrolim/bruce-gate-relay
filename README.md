@@ -2,7 +2,8 @@
 
 <p align="center">
   <b>Open your own RF gates from anywhere.</b><br>
-  A Cloudflare Worker relay + a <a href="https://github.com/BruceDevices/firmware">Bruce</a> firmware module for the LilyGO T-Embed CC1101.
+  A Cloudflare Worker relay + a <a href="https://github.com/BruceDevices/firmware">Bruce</a> firmware module
+  for Sub-GHz Bruce devices (tested on the LilyGO T-Embed CC1101).
 </p>
 
 <p align="center">
@@ -24,6 +25,7 @@
 
 - [Features](#features)
 - [How it works](#how-it-works)
+- [Supported hardware](#supported-hardware)
 - [What you need](#what-you-need)
 - [Installation](#installation)
   - [1. Record your gate signals](#1-record-your-gate-signals)
@@ -78,11 +80,48 @@ flowchart LR
 
 Protocol, API and code map: [docs/architecture.md](docs/architecture.md).
 
+## Supported hardware
+
+Gate Relay is a Bruce module, so it runs on Bruce devices that have **Wi-Fi** (every ESP32 does) and a
+**Sub-GHz radio**. The radio can be built in (a CC1101 chip) or an external module that Bruce supports: a
+CC1101 on SPI, or a simple 433 MHz transmitter. You pick it in Bruce under **Config → RF**. Gate Relay
+transmits through Bruce's own RF code, so whatever replays your `.sub` file in Bruce also works here.
+
+Every [release](https://github.com/douglasrolim/bruce-gate-relay/releases) includes an image for each board
+in [`firmware/BOARDS`](firmware/BOARDS):
+
+| Device | Bruce env | Sub-GHz radio | Status |
+|---|---|---|---|
+| LilyGO T-Embed CC1101 / CC1101 Plus | `lilygo-t-embed-cc1101` | built-in CC1101 | ✅ tested |
+| Bruce Reaper RF | `reaper` | built-in CC1101 | 🧪 builds |
+| Smoochiee V2 | `smoochiee-board` | built-in CC1101 | 🧪 builds |
+| ESP32-C5 | `esp32-c5` | CC1101 | 🧪 builds |
+| M5Stack Cardputer / Cardputer Adv | `m5stack-cardputer` | external module | 🧪 builds |
+| M5Stack StickS3, StickC Plus 2, StickC Plus 1.1 | `m5stack-sticks3`, `m5stack-cplus2`, `m5stack-cplus1_1` | external module | 🧪 builds |
+| M5Stack Core, Core2, CoreS3 / SE | `m5stack-core16mb`, `m5stack-core2`, `m5stack-cores3` | external module | 🧪 builds |
+| CYD-2432S028, CYD-3248S035 ("Cheap Yellow Display") | `CYD-2432S028`, `CYD-3248S035R` | external module | 🧪 builds |
+| LilyGO T-LoRa Pager, T-Display-S3 | `lilygo-t-lora-pager`, `lilygo-t-display-s3` | external module | 🧪 builds |
+| Elecrow 24B, Advance 3.5" S3 | `elecrow-24B`, `elecrow-advance-35-s3` | external module | 🧪 builds |
+
+**✅ tested** means opened a real gate. **🧪 builds** means the image compiles in CI, but nobody has
+reported it on hardware yet. The release notes list the boards that built for that Bruce version. Tried
+it on one of these? Please open an issue or a PR to mark it tested. For wiring an external module, see Bruce's
+[connection diagrams](https://github.com/BruceDevices/firmware/tree/main/media/connections) and
+[wiki](https://wiki.bruce.computer), and the device list at [bruce.computer/boards](https://bruce.computer/boards).
+
+Notes:
+
+- A **simple 433 MHz transmitter** only sends on its own frequency (usually 433.92 MHz) with ASK/OOK. That
+  covers most fixed-code gates in Brazil and Europe. Remotes on 315, 390 or 868 MHz need a CC1101.
+- Boards with 4 MB of flash have less room. If one of them stops building, it's dropped from that release
+  and the notes say so.
+- To add a board, add its Bruce env to `firmware/BOARDS`. The next release builds it.
+
 ## What you need
 
 | | Item | Notes |
 |---|---|---|
-| 📟 | [LilyGO T-Embed CC1101](https://lilygo.cc/) with [Bruce](https://bruce.computer/) | Your gate signals already recorded and **tested** (replay must open the gate) |
+| 📟 | A [supported Bruce device](#supported-hardware) with a Sub-GHz radio (e.g. [LilyGO T-Embed CC1101](https://lilygo.cc/)) | Your gate signals already recorded and **tested** (replay must open the gate) |
 | ☁️ | [Cloudflare account](https://dash.cloudflare.com/sign-up) + a domain on it | Free plan. `workers.dev` also works, see [docs/setup-cloudflare.md](docs/setup-cloudflare.md#3-custom-domain) |
 | 🔑 | A Google account | For the Google login (optional: one-time codes by email work without it) |
 | 💻 | [Node.js](https://nodejs.org/) 22+ and [Git](https://git-scm.com/) | To deploy the Worker |
@@ -195,7 +234,7 @@ Find the port in Windows Device Manager → *Ports (COM & LPT)* → "USB Serial 
 Bluetooth COM ports are not it. On Linux the port is `/dev/ttyACM0`, on macOS `/dev/cu.usbmodem*`.
 
 **Option A: download a ready-made build (recommended).** Get the latest
-`bruce-<version>-gate-relay-lilygo-t-embed-cc1101.bin` from
+`bruce-<version>-gate-relay-<board>.bin` for your board (e.g. `…-lilygo-t-embed-cc1101.bin`) from
 [Releases](https://github.com/douglasrolim/bruce-gate-relay/releases), check it against the `.sha256` file, and flash it:
 
 ```bash
@@ -205,7 +244,8 @@ python -m esptool --port COM5 write-flash 0x0 bruce-1.16.1-gate-relay-lilygo-t-e
 **Option B: build it yourself** (needs `pip install platformio`, and on Windows PowerShell or cmd, not Git Bash):
 
 ```bash
-python firmware/scripts/gate_relay_fw.py flash --port COM5
+python firmware/scripts/gate_relay_fw.py flash --port COM5                           # T-Embed CC1101 (default)
+python firmware/scripts/gate_relay_fw.py flash --port COM5 --env m5stack-cardputer   # any env from firmware/BOARDS
 ```
 
 The script downloads the Bruce version in [`firmware/BRUCE_VERSION`](firmware/BRUCE_VERSION), adds the
