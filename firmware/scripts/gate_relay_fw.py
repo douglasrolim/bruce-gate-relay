@@ -1,21 +1,24 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # Copyright (C) 2026 douglasrolim and bruce-gate-relay contributors
-"""Integrate, build, flash and monitor the Gate Relay module inside the Bruce tree.
+"""Fetch Bruce, add the Gate Relay module, build, package, flash and monitor.
 
+    python firmware/scripts/gate_relay_fw.py fetch              # clone Bruce (tag in firmware/BRUCE_VERSION)
     python firmware/scripts/gate_relay_fw.py integrate          # copy module + register it in Bruce
-    python firmware/scripts/gate_relay_fw.py build              # pio run -e lilygo-t-embed-cc1101
+    python firmware/scripts/gate_relay_fw.py build              # fetch if needed + pio run -e lilygo-t-embed-cc1101
+    python firmware/scripts/gate_relay_fw.py package            # build + dist/<name>.bin (+ .sha256)
     python firmware/scripts/gate_relay_fw.py flash --port COM5  # build + upload (app partitions only)
     python firmware/scripts/gate_relay_fw.py monitor --port COM5
     python firmware/scripts/gate_relay_fw.py test               # host unit tests (pio test -e native)
 
-The edits to Bruce's own files are tiny and idempotent (marked with "gate-relay"),
-so they survive a rebase onto a new Bruce release.
+Use --bruce-tag 1.17 to try another Bruce release. No fork is needed: the edits to Bruce's own
+files are tiny and idempotent (marked with "gate-relay"), so they apply to new releases too.
 """
 
 from __future__ import annotations
 
 import argparse
+import hashlib
 import os
 import re
 import shutil
@@ -29,6 +32,9 @@ MODULE_SRC = ROOT / "gate_relay"
 BRUCE = ROOT / "bruce"
 MODULE_DST = BRUCE / "src" / "modules" / "gate_relay"
 DEFAULT_ENV = "lilygo-t-embed-cc1101"
+BRUCE_REPO = "https://github.com/BruceDevices/firmware"
+VERSION_FILE = ROOT / "BRUCE_VERSION"
+DIST = ROOT.parent / "dist"
 WEBSOCKETS_DEP = "links2004/WebSockets@2.7.3"
 # Bruce asks for FastLED ^3.10.3, which now resolves to 3.10.9: that release uses `FP` as an
 # identifier and clashes with Bruce's `#define FP 1`. Pin the last version that builds.
@@ -49,6 +55,51 @@ def pio(*args: str) -> None:
     subprocess.run(cmd, check=True, env=env)
 
 
+def default_tag() -> str:
+    return VERSION_FILE.read_text(encoding="utf-8").strip()
+
+
+def current_tag() -> str | None:
+    if not (BRUCE / ".git").exists():
+        return None
+    out = subprocess.run(["git", "-C", str(BRUCE), "describe", "--tags", "--exact-match"], capture_output=True, text=True)
+    return out.stdout.strip() or None
+
+
+def fetch(tag: str) -> None:
+    """Clones Bruce at `tag` into firmware/bruce (replacing an older checkout)."""
+    if current_tag() == tag:
+        print(f"  = Bruce {tag} already in {BRUCE.relative_to(ROOT.parent)}")
+        return
+    if BRUCE.exists():
+        print(f"  - removing old checkout ({current_tag() or 'unknown version'})")
+        def make_writable(func, path, _exc):  # git marks pack files read-only on Windows
+            os.chmod(path, 0o700)
+            func(path)
+
+        kwargs = {"onexc": make_writable} if sys.version_info >= (3, 12) else {"onerror": make_writable}
+        shutil.rmtree(BRUCE, **kwargs)
+    print(f"  + cloning Bruce {tag}")
+    subprocess.run(
+        ["git", "-c", "core.longpaths=true", "clone", "--depth", "1", "--branch", tag, BRUCE_REPO, str(BRUCE)],
+        check=True,
+    )
+
+
+def package(env: str, tag: str) -> Path:
+    """Copies Bruce's merged image (bootloader + partitions + app, flashed at 0x0) to dist/."""
+    merged = BRUCE / f"Bruce-{env}.bin"
+    if not merged.exists():
+        raise SystemExit(f"{merged} not found: did the build succeed?")
+    DIST.mkdir(exist_ok=True)
+    out = DIST / f"bruce-{tag}-gate-relay-{env}.bin"
+    shutil.copy2(merged, out)
+    digest = hashlib.sha256(out.read_bytes()).hexdigest()
+    (DIST / f"{out.name}.sha256").write_text(f"{digest}  {out.name}\n", encoding="utf-8")
+    print(f"  + {out.relative_to(ROOT.parent)} ({out.stat().st_size // 1024} KB)\n    sha256 {digest}")
+    return out
+
+
 def insert_once(path: Path, anchor_regex: str, text: str, after: bool = True) -> None:
     """Inserts `text` next to the first line matching `anchor_regex`, unless already present."""
     content = path.read_text(encoding="utf-8")
@@ -67,7 +118,7 @@ def insert_once(path: Path, anchor_regex: str, text: str, after: bool = True) ->
 
 def integrate() -> None:
     if not (BRUCE / "platformio.ini").exists():
-        raise SystemExit("firmware/bruce is empty. Run: git submodule update --init --recursive")
+        raise SystemExit("firmware/bruce is empty. Run: python firmware/scripts/gate_relay_fw.py fetch")
 
     MODULE_DST.mkdir(parents=True, exist_ok=True)
     for f in MODULE_SRC.iterdir():
@@ -105,16 +156,24 @@ def integrate() -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("command", choices=["integrate", "build", "flash", "monitor", "test"])
+    parser.add_argument("command", choices=["fetch", "integrate", "build", "package", "flash", "monitor", "test"])
     parser.add_argument("--env", default=DEFAULT_ENV)
+    parser.add_argument("--bruce-tag", help="Bruce release tag (default: firmware/BRUCE_VERSION)")
     parser.add_argument("--port", help="serial port, e.g. COM5 or /dev/ttyACM0")
     args = parser.parse_args()
 
+    tag = args.bruce_tag or default_tag()
+    needs_tree = args.command in ("integrate", "build", "package", "flash")
+    if args.command == "fetch" or (needs_tree and (args.bruce_tag or not (BRUCE / "platformio.ini").exists())):
+        fetch(tag)
+
     if args.command == "integrate":
         integrate()
-    elif args.command == "build":
+    elif args.command in ("build", "package"):
         integrate()
         pio("run", "-d", str(BRUCE), "-e", args.env)
+        if args.command == "package":
+            package(args.env, current_tag() or tag)
     elif args.command == "flash":
         if not args.port:
             raise SystemExit("--port is required (e.g. --port COM5)")

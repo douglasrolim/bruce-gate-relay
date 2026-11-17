@@ -40,3 +40,7 @@ desktop.ini
 # Python
 __pycache__/
 *.pyc
+
+# Bruce checkout and build output (fetched by firmware/scripts/gate_relay_fw.py)
+firmware/bruce/
+dist/
