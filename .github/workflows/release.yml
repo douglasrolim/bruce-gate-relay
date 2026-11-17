@@ -142,8 +142,16 @@ jobs:
       - name: Publish release
         if: steps.notes.outputs.has_bins == 'true'
         run: |
-          gh release create "${{ needs.plan.outputs.release_tag }}" artifacts/*.bin artifacts/*.sha256 \
-            --title "Bruce ${{ needs.plan.outputs.bruce_tag }} + Gate Relay" --notes-file notes.md --target "$GITHUB_SHA"
+          TAG="${{ needs.plan.outputs.release_tag }}"
+          TITLE="Bruce ${{ needs.plan.outputs.bruce_tag }} + Gate Relay"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            # Re-run for an existing release (e.g. more boards): replace the images and the notes.
+            gh release upload "$TAG" artifacts/*.bin artifacts/*.sha256 --clobber
+            gh release edit "$TAG" --title "$TITLE" --notes-file notes.md
+          else
+            gh release create "$TAG" artifacts/*.bin artifacts/*.sha256 \
+              --title "$TITLE" --notes-file notes.md --target "$GITHUB_SHA"
+          fi
       - name: Report a broken reference build
         if: steps.notes.outputs.ref_ok != 'true'
         run: |
