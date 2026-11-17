@@ -5,6 +5,7 @@ import { t } from "./i18n";
 import { Api, ApiError, describeError, type AuditEntry, type GateView, type Me } from "./api";
 import { locationBanner, offlineBanner } from "./banners";
 import { fill, formatDateTime, h, svg, timeAgo, toast } from "./dom";
+import { projectFooter, sourceLink } from "./about";
 import { isInteracting, renderGateList, renderKey } from "./gateList";
 import { gateIcon, icons } from "./icons";
 import { LocationService } from "./location";
@@ -212,6 +213,7 @@ export class UserApp {
       !this.online ? offlineBanner(this.lastSeen) : null,
       this.gates.some((g) => g.lat !== undefined) ? locationBanner(this.loc.state, this.loc) : null,
       list,
+      projectFooter(),
     );
   }
 
@@ -569,6 +571,7 @@ export class UserApp {
                 : t("In Chrome, open the ⋮ menu, then “Add to Home screen” or “Install app”."),
             ),
           ),
+      h("p", { class: "footer-note" }, t("bruce-gate-relay is free software (AGPL-3.0)."), " ", sourceLink()),
       h("a", { class: "btn danger block", href: "/cdn-cgi/access/logout" }, svg(icons.logout), t("Sign out")),
     );
   }

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 douglasrolim and bruce-gate-relay contributors
 
+import { projectFooter } from "./about";
 import { t } from "./i18n";
 import { Api, ApiError, describeError, type GuestGatesResponse } from "./api";
 import { locationBanner, offlineBanner } from "./banners";
@@ -113,6 +114,7 @@ export class GuestApp {
         needsLocation ? t("Your location is only used to check that you're at the gate and is never stored. ") : "",
         t("Tip: add this page to your Home Screen for quick access."),
       ),
+      projectFooter(),
     );
   }
 }

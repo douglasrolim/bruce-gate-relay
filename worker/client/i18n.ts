@@ -152,6 +152,8 @@ const PT: Record<string, string> = {
   "In Chrome, open the ⋮ menu, then “Add to Home screen” or “Install app”.":
     "No Chrome, abra o menu ⋮ e toque em “Adicionar à tela inicial” ou “Instalar app”.",
   "Sign out": "Sair",
+  "Open source on GitHub": "Código aberto no GitHub",
+  "bruce-gate-relay is free software (AGPL-3.0).": "O bruce-gate-relay é software livre (AGPL-3.0).",
   // Gate menu & settings
   "Location set · {r} m radius": "Localização definida · raio de {r} m",
   "No location yet": "Ainda sem localização",
