@@ -36,3 +36,7 @@ desktop.ini
 
 # Private strings for scripts/check-private.sh
 .private-terms
+
+# Python
+__pycache__/
+*.pyc
