@@ -16,10 +16,12 @@ so they survive a rebase onto a new Bruce release.
 from __future__ import annotations
 
 import argparse
+import os
 import re
 import shutil
 import subprocess
 import sys
+import sysconfig
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]  # firmware/
@@ -28,13 +30,23 @@ BRUCE = ROOT / "bruce"
 MODULE_DST = BRUCE / "src" / "modules" / "gate_relay"
 DEFAULT_ENV = "lilygo-t-embed-cc1101"
 WEBSOCKETS_DEP = "links2004/WebSockets@2.7.3"
+# Bruce asks for FastLED ^3.10.3, which now resolves to 3.10.9: that release uses `FP` as an
+# identifier and clashes with Bruce's `#define FP 1`. Pin the last version that builds.
+FASTLED_PIN = ("fastled/FastLED @^3.10.3", "fastled/FastLED @3.10.3")
 MARK = "// gate-relay"
 
 
 def pio(*args: str) -> None:
     cmd = [sys.executable, "-m", "platformio", *args]
     print("$", " ".join(cmd))
-    subprocess.run(cmd, check=True)
+    env = os.environ.copy()
+    # Bruce's build scripts call `pio` directly: make sure the PlatformIO scripts folder is on PATH.
+    scripts = Path(sys.executable).parent / ("Scripts" if os.name == "nt" else "bin")
+    user_scripts = Path(sysconfig.get_path("scripts", f"{os.name}_user"))
+    env["PATH"] = os.pathsep.join([str(scripts), str(user_scripts), env.get("PATH", "")])
+    if os.name == "nt" and ("MSYSTEM" in env):
+        raise SystemExit("Run this from PowerShell or cmd, not Git Bash/MSYS: the ESP-IDF tools refuse MSYS shells.")
+    subprocess.run(cmd, check=True, env=env)
 
 
 def insert_once(path: Path, anchor_regex: str, text: str, after: bool = True) -> None:
@@ -83,6 +95,11 @@ def integrate() -> None:
         print("  + platformio.ini lib_deps")
     else:
         print("  = platformio.ini already patched")
+
+    content = ini.read_text(encoding="utf-8")
+    if FASTLED_PIN[0] in content:
+        ini.write_text(content.replace(FASTLED_PIN[0], f"{FASTLED_PIN[1]} ; gate-relay pin"), encoding="utf-8")
+        print("  + platformio.ini FastLED pinned to 3.10.3")
     print("Integrated. Review with: git -C firmware/bruce diff")
 
 
