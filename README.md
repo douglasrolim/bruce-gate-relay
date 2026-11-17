@@ -65,6 +65,12 @@ cd .. && python firmware/scripts/gate_relay_fw.py flash --port COM5
 
 Written for someone who has never used Cloudflare. Use your own domain wherever you see `gate.example.com`.
 
+> [!TIP]
+> **First time?** Follow the [complete walkthrough](docs/walkthrough.md). It covers the whole process in order,
+> as done on a real device: backing up the original firmware and your `.sub` files, building Bruce with the
+> Gate Relay module, flashing it, copying the config over USB, and the first open from the phone, plus every
+> pitfall we hit on Windows. The steps below are the summary.
+
 ### 1. Prerequisites
 
 Create a Cloudflare account and add your domain (its *Overview* must say **Active**). Install Node.js,
@@ -75,7 +81,14 @@ Python, PlatformIO and Git. Check: `node -v`, `python -m platformio --version`, 
 In Bruce, record each remote (*RF → Scan/copy*), save it, and **test the replay** from the device.
 Then create the folder `/BruceRF/gates/` (on the SD card, or LittleFS if you have no card) and copy
 each signal there with a friendly name: `Garage.sub`, `Main Entrance.sub`. The file name is the name
-shown in the app.
+shown in the app. You can do it on the device, or from the PC over USB with
+[`tools/bruce-serial`](tools/bruce-serial/bruce_serial.py):
+
+```bash
+python tools/bruce-serial/bruce_serial.py --port COM5 mkdir /BruceRF/gates
+python tools/bruce-serial/bruce_serial.py --port COM5 cp /BruceRF/rcs.sub /BruceRF/gates
+python tools/bruce-serial/bruce_serial.py --port COM5 mv /BruceRF/gates/rcs.sub "/BruceRF/gates/Garage.sub"
+```
 
 *Fixed code or rolling code?* A fixed-code remote sends the same code every time: Bruce decodes it as
 a plain protocol (e.g. *RcSwitch*, 24–28 bits) and the replay opens the gate repeatedly. Rolling-code
@@ -116,17 +129,30 @@ To **add or remove people** later: edit the Access Allow policy *and* `ALLOWED_E
 
 ### 7. Build and flash the firmware
 
-Follow [docs/setup-firmware.md](docs/setup-firmware.md): back up the device
-(`python -m esptool --port COM5 read_flash 0 ALL flash-backup.bin`), find the port, then
-`python firmware/scripts/gate_relay_fw.py flash --port COM5`. If the upload fails, hold **BOOT** while
+Follow [docs/setup-firmware.md](docs/setup-firmware.md). First **back up the device**:
+
+```bash
+python tools/bruce-serial/bruce_serial.py --port COM5 info                    # note the Bruce version
+python tools/bruce-serial/bruce_serial.py --port COM5 backup-subs backup/sub  # every .sub, MD5-checked
+python -m esptool --port COM5 read-flash 0 ALL backup/flash.bin               # full 16 MB image
+```
+
+Then get Bruce at the **same version** and build and flash:
+
+```bash
+git clone --depth 1 --branch 1.16.1 https://github.com/BruceDevices/firmware firmware/bruce
+python firmware/scripts/gate_relay_fw.py flash --port COM5
+```
+ If the upload fails, hold **BOOT** while
 plugging in USB and try again. **On Windows**, build from PowerShell or cmd (not Git Bash), and see the
 [Windows notes](docs/setup-firmware.md#windows-notes) about `PATH`, long paths and the C++ compiler for tests.
 
 ### 8. Configure the device
 
-Copy `firmware/gate-relay.example.json` to `/gate-relay.json` on the SD card (or LittleFS) and fill in
-the URL, the device token and the Access service token (field table in
-[docs/setup-firmware.md](docs/setup-firmware.md#4-configure-the-device)). Connect Bruce to your Wi-Fi once,
+Copy `firmware/gate-relay.example.json`, fill in the URL, the device token and the Access service token
+(field table in [docs/setup-firmware.md](docs/setup-firmware.md#4-configure-the-device)), and put it at
+`/gate-relay.json` on the SD card or LittleFS, for example over USB:
+`python tools/bruce-serial/bruce_serial.py --port COM5 push gate-relay.json /gate-relay.json` (MD5-checked). Connect Bruce to your Wi-Fi once,
 then open **RF → Gate Relay**. The screen should say *Server: Online* and list your gates.
 
 ### 9. First use on the phone
@@ -269,6 +295,7 @@ npx tsx ../tools/ui-preview/server.ts     # UI preview at http://localhost:8788,
 npm run dev                               # real Workers runtime at http://localhost:8787 (needs .dev.vars)
 node ../tools/fake-device/fake-device.mjs --url ws://localhost:8787/device --token <DEVICE_TOKEN>
 python ../firmware/scripts/gate_relay_fw.py test   # firmware host tests
+python ../tools/bruce-serial/bruce_serial.py --port COM5 ls /BruceRF/gates   # talk to Bruce's serial CLI
 ```
 
 The fake device supports `--mode ok|fail|timeout|malformed` to exercise error paths.
@@ -284,6 +311,8 @@ See [CONTRIBUTING.md](CONTRIBUTING.md).
 | *No answer from the device* | Device busy or Wi-Fi unstable; check the device screen |
 | *Signal sent* but the gate didn't move | Out of radio range, or the `.sub` is a rolling-code/raw capture that doesn't replay |
 | Guest link asks for Google login | The Bypass application for `/i/*` and `/api/guest/*` is missing |
+| `/device` answers `401` with an HTML *Cloudflare Access* page | The Service Auth policy is missing or the service token secret is wrong (a JSON `401` comes from the Worker instead) |
+| Device reboots (orange screen) after Wi-Fi connects | Decode the backtrace, see the [walkthrough](docs/walkthrough.md#8-first-open) |
 
 ## Roadmap
 
@@ -298,6 +327,9 @@ See [CONTRIBUTING.md](CONTRIBUTING.md).
 Contributions are welcome: see [CONTRIBUTING.md](CONTRIBUTING.md). Licensed under the
 [GNU AGPL v3.0 or later](LICENSE), the same license as Bruce, because the firmware module is compiled
 into it. Copyright (C) 2026 douglasrolim and bruce-gate-relay contributors.
+
+The web app links back to this repository on every screen, so anyone using a deployment can find the
+source code.
 
 Huge thanks to the [Bruce](https://github.com/BruceDevices/firmware) project and its contributors, whose
 firmware does all the radio work. Not affiliated with Bruce, LilyGO, Cloudflare or Google.

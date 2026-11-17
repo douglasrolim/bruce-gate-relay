@@ -9,11 +9,13 @@ Flashing replaces the firmware. The `upload` target writes only the bootloader, 
 app, so files on LittleFS/SD normally survive, but **back up anyway**:
 
 ```bash
-python -m esptool --port COM5 read_flash 0 ALL flash-backup.bin   # Windows: COMx, Linux: /dev/ttyACM0
+python -m esptool --port COM5 read-flash 0 ALL flash-backup.bin   # Windows: COMx, Linux: /dev/ttyACM0
 ```
 
-Also copy your `.sub` files somewhere safe (Bruce WebUI or the serial `cat` command). To restore the
-exact previous state: `python -m esptool --port COM5 write_flash 0 flash-backup.bin`.
+Also copy your `.sub` files somewhere safe. Over USB, MD5-verified:
+`python tools/bruce-serial/bruce_serial.py --port COM5 backup-subs backup/sub` (or use the Bruce WebUI).
+To restore the exact previous state: `python -m esptool --port COM5 write-flash 0 flash-backup.bin`.
+The full, step-by-step process is in the [walkthrough](walkthrough.md).
 
 ## 2. Get the sources
 
@@ -67,7 +69,8 @@ If the upload fails: unplug USB, **hold BOOT**, plug it back in, release BOOT, a
 ## 4. Configure the device
 
 Copy `firmware/gate-relay.example.json` to **`/gate-relay.json`** on the SD card. Without a working SD
-card, Bruce uses its internal LittleFS: put the file there (Bruce WebUI → *LittleFS*, or the serial CLI).
+card, Bruce uses its internal LittleFS: put the file there (Bruce WebUI → *LittleFS*, or over USB with
+`python tools/bruce-serial/bruce_serial.py --port COM5 push gate-relay.json /gate-relay.json`).
 
 | Field | Required | Default | Description |
 |---|---|---|---|
