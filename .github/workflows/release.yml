@@ -1,9 +1,10 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-# Publishes ready-to-flash firmware (Bruce + Gate Relay) as GitHub Releases.
+# Publishes ready-to-flash firmware (Bruce + Gate Relay) for every board in firmware/BOARDS.
 #
-# - Every Monday it checks for a new Bruce release. If it builds with the module, a release
-#   "bruce-<tag>" is published with the .bin; if it doesn't, an issue is opened.
-# - Pushing a tag "v*" (a new bruce-gate-relay version) publishes a build for firmware/BRUCE_VERSION.
+# - Every Monday it checks for a new Bruce release and builds it for all boards. A release
+#   "bruce-<tag>" is published with every image that built. If the reference board
+#   (lilygo-t-embed-cc1101) fails, an issue is opened.
+# - Pushing a tag "v*" (a new bruce-gate-relay version) publishes builds for firmware/BRUCE_VERSION.
 # - "Run workflow" builds any Bruce tag on demand.
 name: Firmware release
 
@@ -26,85 +27,137 @@ concurrency:
   group: firmware-release
   cancel-in-progress: false
 
+env:
+  REFERENCE_BOARD: lilygo-t-embed-cc1101
+
 jobs:
-  release:
+  plan:
     runs-on: ubuntu-latest
+    outputs:
+      bruce_tag: ${{ steps.plan.outputs.bruce_tag }}
+      release_tag: ${{ steps.plan.outputs.release_tag }}
+      skip: ${{ steps.plan.outputs.skip }}
+      boards: ${{ steps.plan.outputs.boards }}
     env:
       GH_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@v4
-
-      - name: Decide what to build
-        id: plan
+      - id: plan
         run: |
           if [ "${{ github.event_name }}" = "push" ]; then
             BRUCE_TAG=$(cat firmware/BRUCE_VERSION)
             RELEASE_TAG="${GITHUB_REF_NAME}"
           else
             BRUCE_TAG="${{ github.event.inputs.bruce_tag }}"
-            if [ -z "$BRUCE_TAG" ]; then
-              BRUCE_TAG=$(gh api repos/BruceDevices/firmware/releases/latest --jq .tag_name)
-            fi
+            [ -z "$BRUCE_TAG" ] && BRUCE_TAG=$(gh api repos/BruceDevices/firmware/releases/latest --jq .tag_name)
             RELEASE_TAG="bruce-${BRUCE_TAG}"
             if [ "${{ github.event_name }}" = "schedule" ] && gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
               echo "Release $RELEASE_TAG already exists; nothing to do."
               echo "skip=true" >> "$GITHUB_OUTPUT"
             fi
           fi
+          BOARDS=$(grep -v '^\s*#' firmware/BOARDS | awk -F'|' 'NF{gsub(/ /,"",$1); print $1}' | jq -R . | jq -sc .)
           echo "bruce_tag=$BRUCE_TAG" >> "$GITHUB_OUTPUT"
           echo "release_tag=$RELEASE_TAG" >> "$GITHUB_OUTPUT"
-          echo "Bruce $BRUCE_TAG -> release $RELEASE_TAG"
+          echo "boards=$BOARDS" >> "$GITHUB_OUTPUT"
+          echo "Bruce $BRUCE_TAG -> release $RELEASE_TAG for $BOARDS"
 
+  build:
+    needs: plan
+    if: needs.plan.outputs.skip != 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        board: ${{ fromJson(needs.plan.outputs.boards) }}
+    steps:
+      - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
-        if: steps.plan.outputs.skip != 'true'
         with:
           python-version: "3.12"
-
       - uses: actions/cache@v4
-        if: steps.plan.outputs.skip != 'true'
         with:
           path: ~/.platformio
-          key: pio-${{ steps.plan.outputs.bruce_tag }}
-
-      - name: Build
-        id: build
-        if: steps.plan.outputs.skip != 'true'
+          key: pio-${{ needs.plan.outputs.bruce_tag }}-${{ matrix.board }}
+      - name: Build ${{ matrix.board }}
         run: |
           pip install platformio
-          python firmware/scripts/gate_relay_fw.py package --bruce-tag "${{ steps.plan.outputs.bruce_tag }}" 2>&1 | tee build.log
+          python firmware/scripts/gate_relay_fw.py package --env "${{ matrix.board }}" \
+            --bruce-tag "${{ needs.plan.outputs.bruce_tag }}" 2>&1 | tee build.log
+      - name: Keep the log of a failed build
+        if: failure()
+        run: mkdir -p dist && tail -n 80 build.log > "dist/FAILED-${{ matrix.board }}.log"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: fw-${{ matrix.board }}
+          path: dist/*
+          if-no-files-found: ignore
 
+  publish:
+    needs: [plan, build]
+    if: always() && needs.plan.outputs.skip != 'true'
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+      - name: Write release notes
+        id: notes
+        run: |
+          BRUCE_TAG="${{ needs.plan.outputs.bruce_tag }}"
+          ok=0; ref_ok=false
+          {
+            echo "Ready-to-flash **Bruce \`${BRUCE_TAG}\` + Gate Relay** (\`${GITHUB_SHA::7}\`)."
+            echo
+            echo "| Board | Device | Radio | Status | Image |"
+            echo "|---|---|---|---|---|"
+            grep -v '^\s*#' firmware/BOARDS | while IFS='|' read -r env device radio status; do
+              env=$(echo "$env" | xargs); [ -z "$env" ] && continue
+              bin="bruce-${BRUCE_TAG}-gate-relay-${env}.bin"
+              if [ -f "artifacts/$bin" ]; then
+                label=$([ "$(echo $status | xargs)" = "tested" ] && echo "✅ tested on hardware" || echo "🧪 builds, not yet tested")
+                echo "| \`$env\` |$device|$radio| $label | \`$bin\` |"
+              else
+                echo "| \`$env\` |$device|$radio| ❌ build failed | – |"
+              fi
+            done
+            echo
+            echo "**Flash** (keeps your files on LittleFS/SD; back up first, see the README):"
+            echo
+            echo '```'
+            echo "python -m esptool --port COM5 write-flash 0x0 bruce-${BRUCE_TAG}-gate-relay-<board>.bin"
+            echo '```'
+            echo
+            echo "Check the download with its \`.sha256\` file. Boards without a built-in CC1101 need an external"
+            echo "radio module configured in Bruce (Config → RF). Use only as described in LEGAL.md."
+          } > notes.md
+          ls artifacts/*.bin >/dev/null 2>&1 && echo "has_bins=true" >> "$GITHUB_OUTPUT"
+          [ -f "artifacts/bruce-${BRUCE_TAG}-gate-relay-${REFERENCE_BOARD}.bin" ] && echo "ref_ok=true" >> "$GITHUB_OUTPUT"
+          cat notes.md
       - name: Publish release
-        if: steps.plan.outputs.skip != 'true' && steps.build.outcome == 'success'
+        if: steps.notes.outputs.has_bins == 'true'
         run: |
-          BRUCE_TAG="${{ steps.plan.outputs.bruce_tag }}"
-          cat > notes.md <<NOTES
-          Ready-to-flash firmware for the **LilyGO T-Embed CC1101**: Bruce \`${BRUCE_TAG}\` + Gate Relay (\`${GITHUB_SHA::7}\`).
-
-          **Flash** (keeps your files on LittleFS/SD; back up first, see the README):
-
-          \`\`\`
-          python -m esptool --port COM5 write_flash 0x0 bruce-${BRUCE_TAG}-gate-relay-lilygo-t-embed-cc1101.bin
-          \`\`\`
-
-          Verify the download with the \`.sha256\` file. Use only as described in LEGAL.md.
-          NOTES
-          gh release create "${{ steps.plan.outputs.release_tag }}" dist/* \
-            --title "Bruce ${BRUCE_TAG} + Gate Relay" --notes-file notes.md --target "$GITHUB_SHA"
-
-      - name: Report a build failure
-        if: failure() && steps.build.outcome == 'failure'
+          gh release create "${{ needs.plan.outputs.release_tag }}" artifacts/*.bin artifacts/*.sha256 \
+            --title "Bruce ${{ needs.plan.outputs.bruce_tag }} + Gate Relay" --notes-file notes.md --target "$GITHUB_SHA"
+      - name: Report a broken reference build
+        if: steps.notes.outputs.ref_ok != 'true'
         run: |
-          TITLE="Gate Relay does not build with Bruce ${{ steps.plan.outputs.bruce_tag }}"
+          TITLE="Gate Relay does not build with Bruce ${{ needs.plan.outputs.bruce_tag }}"
           if gh issue list --state open --search "$TITLE in:title" --json number --jq '.[0].number' | grep -q .; then
             echo "Issue already open"; exit 0
           fi
           {
-            echo "The scheduled build of Bruce \`${{ steps.plan.outputs.bruce_tag }}\` with the Gate Relay module failed."
+            echo "The build of Bruce \`${{ needs.plan.outputs.bruce_tag }}\` with the Gate Relay module failed for \`${REFERENCE_BOARD}\`."
             echo
             echo "Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
             echo
             echo '```'
-            tail -n 60 build.log
+            cat "artifacts/FAILED-${REFERENCE_BOARD}.log" 2>/dev/null || echo "(no log)"
             echo '```'
           } > issue.md
           gh issue create --title "$TITLE" --body-file issue.md --label firmware || gh issue create --title "$TITLE" --body-file issue.md

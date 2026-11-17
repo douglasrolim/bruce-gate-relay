@@ -1,0 +1,21 @@
+# Bruce build environments that get a Gate Relay image in every release.
+# Format: <pio env> | <device> | <Sub-GHz radio> | <status>
+# status: tested = confirmed on real hardware; build = compiles, not yet tested on hardware.
+# Radio: built-in CC1101, or an external CC1101 (SPI) / 433 MHz module configured in Bruce (Config → RF).
+lilygo-t-embed-cc1101 | LilyGO T-Embed CC1101 / CC1101 Plus | built-in CC1101 | tested
+reaper                | Bruce Reaper RF                     | built-in CC1101 | build
+smoochiee-board       | Smoochiee V2                        | built-in CC1101 | build
+esp32-c5              | ESP32-C5                            | CC1101          | build
+m5stack-cardputer     | M5Stack Cardputer / Cardputer Adv   | external module | build
+m5stack-sticks3       | M5Stack StickS3                     | external module | build
+m5stack-cplus2        | M5Stack StickC Plus 2               | external module | build
+m5stack-cplus1_1      | M5Stack StickC Plus 1.1             | external module | build
+m5stack-core16mb      | M5Stack Core (16 MB)                | external module | build
+m5stack-core2         | M5Stack Core2                       | external module | build
+m5stack-cores3        | M5Stack CoreS3 / CoreS3 SE          | external module | build
+CYD-2432S028          | CYD-2432S028 ("Cheap Yellow Display") | external module | build
+CYD-3248S035R         | CYD-3248S035 (resistive)            | external module | build
+lilygo-t-lora-pager   | LilyGO T-LoRa Pager                 | external module | build
+lilygo-t-display-s3   | LilyGO T-Display-S3                 | external module | build
+elecrow-24B           | Elecrow 2.4" (24B)                  | external module | build
+elecrow-advance-35-s3 | Elecrow Advance 3.5" S3             | external module | build
