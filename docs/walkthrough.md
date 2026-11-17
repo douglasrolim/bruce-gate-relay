@@ -123,8 +123,13 @@ Service Auth policy is missing, or the client secret is wrong.
 
 ## 5. Build the firmware
 
+> [!TIP]
+> Don't want to build? Flash a ready-made image from
+> [Releases](https://github.com/douglasrolim/bruce-gate-relay/releases) instead (see
+> [setup-firmware.md](setup-firmware.md#2-option-a-flash-a-release-no-build)) and skip to step 7.
+
 ```bash
-git clone --depth 1 --branch 1.16.1 https://github.com/BruceDevices/firmware firmware/bruce   # same tag as 2.1
+python firmware/scripts/gate_relay_fw.py fetch    # clones Bruce at firmware/BRUCE_VERSION (use --bruce-tag to match 2.1)
 python firmware/scripts/gate_relay_fw.py test     # host unit tests (needs gcc/g++, see below)
 python firmware/scripts/gate_relay_fw.py build    # integrate the module + pio run
 ```

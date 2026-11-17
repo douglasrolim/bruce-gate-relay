@@ -93,13 +93,25 @@ Plan about **1–2 hours** the first time. Everything is free.
 
 ## Installation
 
+> [!TIP]
+> **First time?** The [complete walkthrough](docs/walkthrough.md) covers the whole process in order, as done on
+> a real device: backups, Cloudflare, building and flashing, copying the config over USB and the first open,
+> plus every pitfall we hit on Windows. The steps below are the summary.
+
 ### 1. Record your gate signals
 
 1. In Bruce, record each remote (**RF → Scan/Copy**), save it and **replay it** from the device: the
    gate must open. Only fixed-code remotes work (see below).
 2. Put the recordings in **`/BruceRF/gates/`** with friendly names: `Garage.sub`, `Main Entrance.sub`.
-   The file name is the name shown in the app. Use the SD card, or the internal LittleFS if you have no card
-   (Bruce's WebUI or serial CLI can create the folder and copy files).
+   The file name is the name shown in the app. Use the SD card, or the internal LittleFS if you have no card.
+   You can do it on the device, with Bruce's WebUI, or from the PC over USB with
+   [`tools/bruce-serial`](tools/bruce-serial/bruce_serial.py) (`pip install pyserial`):
+
+   ```bash
+   python tools/bruce-serial/bruce_serial.py --port COM5 mkdir /BruceRF/gates
+   python tools/bruce-serial/bruce_serial.py --port COM5 cp /BruceRF/rcs.sub /BruceRF/gates
+   python tools/bruce-serial/bruce_serial.py --port COM5 mv /BruceRF/gates/rcs.sub "/BruceRF/gates/Garage.sub"
+   ```
 
 <details>
 <summary><b>Fixed code or rolling code?</b></summary>
@@ -174,7 +186,9 @@ In the Cloudflare dashboard, **Zero Trust** (free up to 50 users). The full clic
 Back up the device first. The backup restores everything exactly as it was:
 
 ```bash
-python -m esptool --port COM5 read_flash 0 ALL flash-backup.bin
+python tools/bruce-serial/bruce_serial.py --port COM5 info                    # note the Bruce version
+python tools/bruce-serial/bruce_serial.py --port COM5 backup-subs backup/sub  # every .sub, MD5-checked
+python -m esptool --port COM5 read-flash 0 ALL backup/flash.bin               # full 16 MB image
 ```
 
 Find the port in Windows Device Manager → *Ports (COM & LPT)* → "USB Serial Device" (VID 303A).
@@ -185,7 +199,7 @@ Bluetooth COM ports are not it. On Linux the port is `/dev/ttyACM0`, on macOS `/
 [Releases](https://github.com/douglasrolim/bruce-gate-relay/releases), check it against the `.sha256` file, and flash it:
 
 ```bash
-python -m esptool --port COM5 write_flash 0x0 bruce-1.16.1-gate-relay-lilygo-t-embed-cc1101.bin
+python -m esptool --port COM5 write-flash 0x0 bruce-1.16.1-gate-relay-lilygo-t-embed-cc1101.bin
 ```
 
 **Option B: build it yourself** (needs `pip install platformio`, and on Windows PowerShell or cmd, not Git Bash):
@@ -203,8 +217,9 @@ the device, **hold BOOT** while plugging it back in, and try again.
 
 ### 6. Configure the device
 
-1. Copy [`firmware/gate-relay.example.json`](firmware/gate-relay.example.json) to **`/gate-relay.json`**
-   on the device (SD card root, or LittleFS root without a card) and fill it in:
+1. Copy [`firmware/gate-relay.example.json`](firmware/gate-relay.example.json), fill it in, and put it at
+   **`/gate-relay.json`** on the device (SD card root, or LittleFS root without a card), for example over USB with
+   `python tools/bruce-serial/bruce_serial.py --port COM5 push gate-relay.json /gate-relay.json` (MD5-checked):
 
    ```json
    {
@@ -388,6 +403,8 @@ are in [docs/authentication.md](docs/authentication.md).
 | *No answer from the device* | The device is busy or its Wi-Fi is unstable |
 | **Signal sent** but the gate didn't move | Out of radio range, or the recording doesn't replay (rolling code or a raw capture) |
 | A guest link asks for a login | The Bypass application for `/i` and `/api/guest` is missing |
+| `/device` answers `401` with an HTML *Cloudflare Access* page | The Service Auth policy is missing or the service token secret is wrong (a JSON `401` comes from the Worker instead) |
+| Device reboots (orange screen) after Wi-Fi connects | Decode the backtrace, see the [walkthrough](docs/walkthrough.md#8-first-open) |
 | Build fails on Windows | Use PowerShell or cmd, and see the [Windows notes](docs/setup-firmware.md#windows-notes) |
 
 ## Development
@@ -400,6 +417,7 @@ npx tsx ../tools/ui-preview/server.ts      # click through the UI at http://loca
 npm run dev                                # real Workers runtime at http://localhost:8787 (copy .dev.vars.example)
 node ../tools/fake-device/fake-device.mjs --url ws://localhost:8787/device --token <DEVICE_TOKEN>
 python ../firmware/scripts/gate_relay_fw.py test   # firmware unit tests (needs gcc: WSL/MinGW on Windows)
+python ../tools/bruce-serial/bruce_serial.py --port COM5 ls /BruceRF/gates   # talk to Bruce's serial CLI
 ```
 
 The fake device supports `--mode ok|fail|timeout|malformed`. See [CONTRIBUTING.md](CONTRIBUTING.md),
@@ -417,7 +435,8 @@ The fake device supports `--mode ok|fail|timeout|malformed`. See [CONTRIBUTING.m
 
 Licensed under the [GNU AGPL v3.0 or later](LICENSE), the same license as Bruce, because the firmware
 module is compiled into it. [LEGAL.md](LEGAL.md) is a notice and disclaimer, not extra license terms.
-Copyright (C) 2026 douglasrolim and bruce-gate-relay contributors.
+Copyright (C) 2026 douglasrolim and bruce-gate-relay contributors. The web app links back to this repository
+on every screen, so anyone using a deployment can find the source code.
 
 Huge thanks to the [Bruce](https://github.com/BruceDevices/firmware) project and its contributors, whose
 firmware does all the radio work. Not affiliated with Bruce, LilyGO, Cloudflare or Google.

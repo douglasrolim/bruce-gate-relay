@@ -11,12 +11,14 @@ Most people don't need to build anything: ready-to-flash images are published un
 ## 1. Back up the device first
 
 ```bash
-python -m esptool --port COM5 read_flash 0 ALL flash-backup.bin   # Windows: COMx, Linux: /dev/ttyACM0
+python -m esptool --port COM5 read-flash 0 ALL flash-backup.bin   # Windows: COMx, Linux: /dev/ttyACM0
 ```
 
-Also copy your `.sub` files somewhere safe (Bruce WebUI or the serial `cat` command). Flashing a Gate Relay
-image does not touch the LittleFS/SD data, but backups are cheap. To restore the exact previous state:
-`python -m esptool --port COM5 write_flash 0 flash-backup.bin`.
+Also copy your `.sub` files somewhere safe. Over USB, MD5-verified:
+`python tools/bruce-serial/bruce_serial.py --port COM5 backup-subs backup/sub` (or use the Bruce WebUI).
+Flashing a Gate Relay image does not touch the LittleFS/SD data, but backups are cheap. To restore the exact
+previous state: `python -m esptool --port COM5 write-flash 0 flash-backup.bin`.
+The full, step-by-step process is in the [walkthrough](walkthrough.md).
 
 Finding the port: Windows Device Manager → *Ports (COM & LPT)* → "USB Serial Device" (VID 303A).
 Bluetooth COM ports are not it. Linux: `/dev/ttyACM0`; macOS: `/dev/cu.usbmodem*`.
@@ -30,7 +32,7 @@ Bluetooth COM ports are not it. Linux: `/dev/ttyACM0`; macOS: `/dev/cu.usbmodem*
 
 ```bash
 python -m pip install esptool
-python -m esptool --port COM5 write_flash 0x0 bruce-1.16.1-gate-relay-lilygo-t-embed-cc1101.bin
+python -m esptool --port COM5 write-flash 0x0 bruce-1.16.1-gate-relay-lilygo-t-embed-cc1101.bin
 ```
 
 The image ends well before the LittleFS partition, so your files stay.
