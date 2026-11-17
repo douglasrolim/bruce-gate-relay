@@ -33,7 +33,7 @@ npm run dev                              # http://localhost:8787 (dev login, loc
 node ../tools/fake-device/fake-device.mjs --url ws://localhost:8787/device --token <DEVICE_TOKEN from .dev.vars>
 ```
 
-Firmware unit tests run on your computer:
+Firmware unit tests run on your computer (they need `gcc`/`g++`: on Windows use WSL or MinGW-w64):
 
 ```bash
 python -m platformio test -d firmware -e native

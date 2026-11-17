@@ -119,7 +119,8 @@ To **add or remove people** later: edit the Access Allow policy *and* `ALLOWED_E
 Follow [docs/setup-firmware.md](docs/setup-firmware.md): back up the device
 (`python -m esptool --port COM5 read_flash 0 ALL flash-backup.bin`), find the port, then
 `python firmware/scripts/gate_relay_fw.py flash --port COM5`. If the upload fails, hold **BOOT** while
-plugging in USB and try again.
+plugging in USB and try again. **On Windows**, build from PowerShell or cmd (not Git Bash), and see the
+[Windows notes](docs/setup-firmware.md#windows-notes) about `PATH`, long paths and the C++ compiler for tests.
 
 ### 8. Configure the device
 
@@ -151,6 +152,45 @@ gate gets a big button.
 - [ ] `curl -i https://gate.example.com/device` (no token) is rejected.
 - [ ] Rebooting the router: the device reconnects by itself within a minute.
 - [ ] Powering the device off: the app shows *Offline* within ~2 minutes.
+
+## Using the app
+
+Everything happens on one screen. The app follows your phone's language (English or Portuguese).
+
+| You want to… | Do this |
+|---|---|
+| **Open a gate** | **Press and hold** its card for about a second, until the ring fills. Releasing early cancels, so it never opens by accident in a pocket. On a computer, click and hold, or focus the card and press **Enter twice** |
+| Know if it worked | The card turns green with **Signal sent** (and the phone vibrates on Android). Red means it failed, with the reason: *Device offline*, *No answer from the device*, *Too far*… |
+| See the closest gate first | Allow location when the app asks. Nearby gates move to the top; if only one is nearby it gets a big round button |
+| See who opened what | **Activity** tab: who, which gate, when, and whether it worked |
+| Use it like an app | Add it to the home screen (see step 9 above). It opens full screen, already signed in for 30 days |
+| Sign out | Tap your initial (top right) → **Sign out** |
+
+> **Signal sent ≠ gate open.** Fixed-code remotes are one-way: the device knows it transmitted, not
+> where the gate is. If the gate didn't move, check the radio range (see *Troubleshooting*).
+
+### For admins
+
+Admins (`ADMIN_EMAILS`) also see a **⋯** button on each gate and a **Manage** tab:
+
+- **⋯ → Set location here**: stand at the gate and tap it. The app warns if the GPS fix is weak (worse than ±50 m).
+- **⋯ → Edit gate settings**: display name, icon, location (or paste coordinates from Google Maps), *nearby* radius
+  (100 m – 2 km) and **Require proximity** (the gate only opens when the phone is within the radius).
+- **⋯ → Share with guests** or **Manage → New**: create a guest link (see below).
+- **Manage**: list and revoke invites, see gate settings, fix *orphaned settings* after renaming a `.sub` file,
+  and export/import a JSON backup of the gate settings.
+
+### Guests (parties, visits, deliveries)
+
+1. **Manage → New** (or **⋯ → Share with guests**). Give it a name ("Birthday party"), pick the gates, the start and
+   end (quick buttons: 4 hours, Tonight, 24 hours, 3 days) and optionally a maximum number of opens.
+   Keep **Guests must be at the gate** on: a forwarded link then doesn't work from far away.
+2. Tap **Create invite**. Share the link with **Share link** (WhatsApp, etc.) or show the **QR code**.
+   *The link is shown only once* (only a hash is stored), so share or save it right away.
+3. The guest opens the link: no account, no app to install. They allow location, hold the gate card, done.
+   The page can be added to the home screen too.
+4. The link stops working at the end time, after the maximum opens, or when you **revoke** it in **Manage**.
+   Every guest open shows in **Activity** with the invite name, marked "(guest)".
 
 ## Configuration reference
 

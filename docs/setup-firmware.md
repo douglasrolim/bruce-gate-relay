@@ -37,6 +37,21 @@ git -C firmware/bruce push -u origin gate-relay
 
 ## 3. Build and flash
 
+### Windows notes
+
+- Use **PowerShell or cmd**, not Git Bash/MSYS: the ESP-IDF tools refuse MSYS shells (the script stops with a clear message).
+- PlatformIO must be on `PATH`. If `pio` is "not recognized", add the folder printed by
+  `python -c "import sysconfig; print(sysconfig.get_path('scripts', 'nt_user'))"` (e.g. `%APPDATA%\Python\Python314\Scripts`).
+  The script also adds it for its own run.
+- Long paths: some libraries have long file names, and folders like OneDrive make paths longer. Run once
+  `git config --global core.longpaths true` (and, as administrator, enable *Win32 long paths* in Group Policy or
+  `New-ItemProperty -Path HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem -Name LongPathsEnabled -Value 1 -PropertyType DWORD -Force`),
+  or keep the repository in a short path such as `C:\src\bruce-gate-relay`.
+- The host unit tests (`test`) need a C++ compiler (`gcc`/`g++`). On Windows, run them in
+  [WSL](https://learn.microsoft.com/windows/wsl/install) or install MinGW-w64. CI runs them on Linux.
+- The first build downloads the ESP32 toolchain (~1–2 GB) and takes several minutes.
+- `integrate` pins FastLED to 3.10.3: newer FastLED releases clash with Bruce 1.16.1 (`#define FP`).
+
 ```bash
 python firmware/scripts/gate_relay_fw.py test                 # host unit tests (no hardware)
 python firmware/scripts/gate_relay_fw.py build                # env lilygo-t-embed-cc1101
