@@ -244,7 +244,8 @@ export function createHero(opts: GateControlOptions & { eyebrow: string }): HTML
     big.classList.remove("is-sending", "is-success", "is-error");
     if (s !== "idle") big.classList.add(`is-${s}`);
     statusLine.className = `status-line${s === "success" ? " ok" : s === "error" ? " err" : ""}`;
-    statusLine.textContent = s === "idle" ? "" : (msg ?? "");
+    // The button already says "Sending…" or "Signal sent"; the line below only explains errors.
+    statusLine.textContent = s === "error" ? (msg ?? "") : "";
     labelGlyph.replaceChildren(
       svg(s === "success" ? icons.check : s === "error" ? icons.x : gateIcon(opts.icon, opts.name)),
     );
